@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TutorIA - White Board</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the overlay layout */
+        .canvas-container {
+            position: relative;
+        }
+        
+        .hint-active {
+            background-color: #fbbf24 !important;
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+        }
+        
+        canvas {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+        
+        #ai-response::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        #ai-response::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        #ai-response::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+        
+        button {
+            transition: all 0.2s ease-in-out;
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        /* Drawing tools styles */
+        .tool-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .tool-btn.active {
+            transform: scale(1.1);
+        }
+        
+        /* Exercise box auto-resize */
+        .exercise-box {
+            max-height: 70vh;
+            transition: all 0.3s ease-in-out;
+        }
+        
+        .exercise-box.expanded {
+            max-height: 80vh;
+        }
+        
+        /* Auto-resize textarea */
+        #exercise-input {
+            min-height: 60px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        /* Eraser section styles */
+        .eraser-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .eraser-btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        .eraser-btn.active {
+            background-color: #f97316 !important;
+            color: white !important;
+        }
+        
+        /* Range slider styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+        }
+        
+        input[type="range"]::-webkit-slider-track {
+            background: #d1d5db;
+            height: 4px;
+            border-radius: 2px;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            background: #3b82f6;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        input[type="range"]::-moz-range-track {
+            background: #d1d5db;
+            height: 4px;
+            border-radius: 2px;
+            border: none;
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            background: #3b82f6;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .overlay-layout {
+                flex-direction: column !important;
+                height: auto !important;
+                gap: 1rem;
+            }
+            
+            .overlay-layout > div {
+                position: relative !important;
+                top: auto !important;
+                left: auto !important;
+                right: auto !important;
+                bottom: auto !important;
+                width: 100% !important;
+                height: auto !important;
+            }
+            
+            .canvas-main {
+                height: 300px !important;
+                order: 2;
+            }
+            
+            .exercise-box {
+                order: 1;
+            }
+            
+            .buttons-box {
+                order: 3;
+                justify-content: center !important;
+            }
+            
+            .output-box {
+                order: 4;
+                height: 250px !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto p-4">
+        <!-- Header -->
+        <header class="text-center mb-4">
+            <h1 class="text-3xl font-bold text-gray-800">White Board</h1>
+        </header>
+        
+        <!-- Main Layout -->
+        <div class="overlay-layout relative h-[calc(100vh-140px)] min-h-[600px]">
+            
+            <!-- Canvas Background -->
+            <div class="canvas-main absolute inset-0 bg-white rounded-lg border-2 border-gray-300 p-4">
+                <div class="canvas-container h-full relative">
+                    <canvas id="whiteboard" width="1000" height="600" 
+                            class="w-full h-full border border-gray-200 rounded cursor-crosshair bg-white"></canvas>
+                </div>
+            </div>
+            
+            <!-- Bottom Controls -->
+            <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-3 z-10">
+                <button id="clear-all" class="bg-red-500 hover:bg-red-600 text-white w-12 h-12 rounded-full shadow-lg font-medium flex items-center justify-center text-xl" title="Eliminar Todo">
+                    🗑️
+                </button>
+                <button id="undo-action" class="bg-gray-500 hover:bg-gray-600 text-white w-12 h-12 rounded-full shadow-lg font-medium flex items-center justify-center text-xl" title="Deshacer">
+                    ↶
+                </button>
+            </div>
+            
+            <!-- Eraser Tool Section (Bottom Left) -->
+            <div class="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-3 border z-10">
+                <h3 class="text-xs font-semibold text-gray-800 mb-2">Herramientas</h3>
+                <div class="flex flex-col space-y-2">
+                    <button id="eraser-mode" class="eraser-btn w-full px-3 py-2 rounded bg-gray-300 text-gray-700 hover:bg-orange-400 hover:text-white transition-colors duration-200 text-sm font-medium">
+                        🧽 Activar Borrador
+                    </button>
+                    <!-- Size control - only visible when eraser is active -->
+                    <div id="eraser-size-control" class="hidden flex items-center space-x-2">
+                        <span class="text-xs text-gray-600">Tamaño:</span>
+                        <input id="eraser-size" type="range" min="5" max="50" value="15" class="flex-1">
+                        <span id="eraser-size-display" class="text-xs text-gray-600">15px</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Exercise Overlay -->
+            <div id="exercise-box" class="exercise-box absolute top-4 left-4 w-80 bg-white rounded-lg border-2 border-gray-300 p-4 shadow-lg z-10">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-sm font-semibold text-gray-800">Ejercicio</h2>
+                    <button id="clear-exercise" class="text-xs text-red-600 hover:text-red-800 px-2 py-1 rounded hover:bg-red-50">
+                        🗑️ Limpiar
+                    </button>
+                </div>
+                
+                <!-- Exercise Content Area -->
+                <div id="exercise-content" class="min-h-20 max-h-60 overflow-y-auto border border-gray-300 rounded p-2 bg-gray-50">
+                    <!-- Text Input -->
+                    <textarea id="exercise-input" class="w-full min-h-16 resize-none border-none bg-transparent text-sm focus:outline-none" 
+                              placeholder="Pega aquí tu ejercicio (texto o imagen)..."
+                              oninput="this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'"></textarea>
+                    
+                    <!-- Image Container -->
+                    <div id="exercise-image-container" class="hidden mt-2">
+                        <div class="relative">
+                            <img id="exercise-image" class="max-w-full h-auto rounded border" alt="Ejercicio pegado">
+                            <button id="remove-exercise-image" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600">
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Instructions -->
+                <p class="text-xs text-gray-500 mt-2">
+                    💡 Puedes pegar texto o imágenes (Ctrl+V)
+                </p>
+            </div>
+            
+            <!-- Help Bar (Top Right) -->
+            <div class="absolute top-4 right-4 z-10">
+                <!-- Help Toggle Button -->
+                <button id="help-toggle" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg font-medium flex items-center space-x-2 transition-all duration-200">
+                    <span>🆘</span>
+                    <span>Ayuda</span>
+                    <span id="help-arrow" class="transform transition-transform duration-200">▼</span>
+                </button>
+                
+                <!-- Help Options Menu (Hidden by default) -->
+                <div id="help-menu" class="hidden absolute top-12 right-0 bg-white rounded-lg shadow-xl border-2 border-gray-200 p-2 w-80 max-h-96 overflow-y-auto">
+                    <div class="space-y-1">
+                        <button id="help-1" class="help-option w-full text-left px-3 py-2 rounded hover:bg-blue-50 text-sm border-l-4 border-red-400">
+                            <div class="font-semibold text-red-600">🚫 Estoy Atascado</div>
+                            <div class="text-gray-600 text-xs">Te ayudo a entender mejor el problema y considerar más casos</div>
+                        </button>
+                        
+                        <button id="help-2" class="help-option w-full text-left px-3 py-2 rounded hover:bg-blue-50 text-sm border-l-4 border-orange-400">
+                            <div class="font-semibold text-orange-600">💡 Necesito una Pista</div>
+                            <div class="text-gray-600 text-xs">Te doy una pista específica para avanzar hacia la solución</div>
+                        </button>
+                        
+                        <button id="help-3" class="help-option w-full text-left px-3 py-2 rounded hover:bg-blue-50 text-sm border-l-4 border-yellow-400">
+                            <div class="font-semibold text-yellow-600">❓ Aclarar el Problema</div>
+                            <div class="text-gray-600 text-xs">Te proporciono más ejemplos e información sobre el problema</div>
+                        </button>
+                        
+                        <button id="help-4" class="help-option w-full text-left px-3 py-2 rounded hover:bg-blue-50 text-sm border-l-4 border-green-400">
+                            <div class="font-semibold text-green-600">👣 Siguiente Paso</div>
+                            <div class="text-gray-600 text-xs">Te sugiero cuál debería ser tu próximo paso</div>
+                        </button>
+                        
+                        <button id="help-5" class="help-option w-full text-left px-3 py-2 rounded hover:bg-blue-50 text-sm border-l-4 border-purple-400">
+                            <div class="font-semibold text-purple-600">✅ Verificar Solución</div>
+                            <div class="text-gray-600 text-xs">Reviso si tu solución es correcta y te doy feedback</div>
+                        </button>
+                        
+                        <button id="help-6" class="help-option w-full text-left px-3 py-2 rounded hover:bg-blue-50 text-sm border-l-4 border-gray-400">
+                            <div class="font-semibold text-gray-600">📖 Mostrar Solución</div>
+                            <div class="text-gray-600 text-xs">Te muestro la solución completa con explicación detallada</div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Output Overlay -->
+            <div class="output-box absolute bottom-4 right-4 w-80 h-64 bg-white rounded-lg border-2 border-gray-300 p-4 shadow-lg z-10">
+                <h2 class="text-sm font-semibold mb-2 text-gray-800">Output</h2>
+                
+                <!-- Loading Indicator -->
+                <div id="loadingIndicator" class="hidden text-center py-4">
+                    <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                    <p class="mt-1 text-xs text-gray-600">Pensando...</p>
+                </div>
+                
+                <!-- AI Response Area -->
+                <div id="ai-response" class="h-36 overflow-y-auto text-xs bg-gray-50 rounded p-2 mb-3 border">
+                    <p class="text-gray-500 italic">Las respuestas de la IA aparecerán aquí...</p>
+                </div>
+                
+                <!-- Query Input -->
+                <div class="flex space-x-2">
+                    <input id="query-input" type="text" 
+                           class="flex-1 px-2 py-1 border border-gray-300 rounded focus:border-blue-500 focus:outline-none text-sm" 
+                           placeholder="Pregunta a la IA...">
+                    <button id="send-query" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm font-medium">
+                        Enviar
+                    </button>
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Footer -->
+        <div class="text-center mt-4 text-gray-500 text-xs">
+            <p>Powered by Google Gemini AI | Hackathon Tech AI 2025</p>
+        </div>
+    </div>
+
+    <!-- JavaScript Files -->
+    <script src="draw.js"></script>
+    <script src="main_new.js"></script>
+</body>
+</html>

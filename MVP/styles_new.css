@@ -1,0 +1,256 @@
+/* Custom CSS for TutorIA - New Design - Simplified */
+
+/* Canvas responsiveness and main area styling */
+.canvas-container {
+    position: relative;
+}
+
+/* Loading spinner animation */
+.loading-spinner {
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3498db;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Hint button active state */
+.hint-active {
+    background-color: #fbbf24 !important;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+}
+
+/* Canvas cursor style */
+.cursor-crosshair {
+    cursor: crosshair;
+}
+
+/* Prevent text selection on canvas */
+canvas {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
+/* Custom scrollbar for response area */
+#ai-response::-webkit-scrollbar {
+    width: 6px;
+}
+
+#ai-response::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+#ai-response::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+#ai-response::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Smooth transitions for all interactive elements */
+button {
+    transition: all 0.2s ease-in-out;
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+/* Exercise textarea styling */
+#exercise-input {
+    font-family: inherit;
+    line-height: 1.4;
+}
+
+#exercise-input:focus {
+    outline: none;
+    background-color: #fafafa;
+}
+
+/* Query input styling */
+#query-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 1px #3b82f6;
+}
+
+/* Ensure proper z-index stacking */
+.z-10 {
+    z-index: 10;
+}
+
+.z-20 {
+    z-index: 20;
+}
+
+/* Hover effects for floating sections */
+.absolute.top-4.left-4:hover,
+.absolute.bottom-4.right-4:hover {
+    box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.1);
+}
+
+/* Focus states for accessibility */
+button:focus,
+input:focus,
+textarea:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* Loading state styling */
+.loading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+/* Error message styling */
+.error-message {
+    color: #dc2626;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Animation for smooth transitions */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Responsive adjustments - Mobile First */
+@media (max-width: 1024px) {
+    /* Adjust floating sections for tablets */
+    .absolute.top-4.left-4 {
+        width: 280px !important;
+    }
+    
+    .absolute.bottom-4.right-4 {
+        width: 280px !important;
+        height: 240px !important;
+    }
+    
+    #ai-response {
+        height: 120px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Mobile: Convert to stacked layout */
+    .relative.h-\[calc\(100vh-140px\)\] {
+        height: auto !important;
+        min-height: calc(100vh - 140px);
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    /* Convert absolute positioned elements to relative */
+    .absolute.top-4.left-4,
+    .absolute.top-4.right-4,
+    .absolute.bottom-4.right-4 {
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        right: auto !important;
+        bottom: auto !important;
+        width: 100% !important;
+        height: auto !important;
+    }
+    
+    /* Canvas becomes relative too */
+    .absolute.inset-0 {
+        position: relative !important;
+        inset: auto !important;
+        height: 350px;
+        order: 2; /* Canvas in the middle */
+    }
+    
+    /* Reorder elements for mobile */
+    .absolute.top-4.left-4 {
+        order: 1; /* Exercise first */
+    }
+    
+    .absolute.top-4.right-4 {
+        order: 3; /* Buttons after canvas */
+        justify-content: center;
+        margin: 1rem 0;
+    }
+    
+    .absolute.bottom-4.right-4 {
+        order: 4; /* Output last */
+        height: 250px !important;
+    }
+    
+    .container {
+        padding: 0.75rem;
+    }
+    
+    h1 {
+        font-size: 1.75rem !important;
+        margin-bottom: 1rem;
+    }
+    
+    #ai-response {
+        height: 150px !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .container {
+        padding: 0.5rem;
+    }
+    
+    h1 {
+        font-size: 1.5rem !important;
+    }
+    
+    /* Smaller canvas on very small screens */
+    .absolute.inset-0 {
+        height: 280px !important;
+    }
+    
+    /* Stack action buttons vertically */
+    .absolute.top-4.right-4 {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    
+    /* Smaller floating sections */
+    .absolute.top-4.left-4 textarea {
+        height: 60px !important;
+    }
+    
+    .absolute.bottom-4.right-4 {
+        height: 220px !important;
+    }
+    
+    #ai-response {
+        height: 120px !important;
+    }
+    
+    /* Ensure buttons are touch-friendly */
+    button {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}

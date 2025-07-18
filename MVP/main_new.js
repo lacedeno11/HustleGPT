@@ -3,19 +3,19 @@
 class TutorIA {
     constructor() {
         // Gemini API configuration
-        this.apiKey = 'YOUR_API_KEY_HERE'; // Replace with actual API key
+        this.apiKey = 'AIzaSyAojAxx9lFUfzjeZXXETjGG_dlzpn-ktPk'; // API key from .env
         this.apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
-        
+
         // Socratic tutoring prompt in Spanish
         this.tutorPrompt = "Eres un tutor experto y amigable. Un estudiante está trabajando en el siguiente problema en su pizarra. Analiza la imagen y su pregunta. Tu objetivo NO es dar la respuesta final. En su lugar, proporciona una pista clara, o el siguiente paso lógico, o haz una pregunta que le ayude a pensar. El idioma de la respuesta debe ser español.";
-        
+
         // State management
         this.hintModeActive = false;
         this.responseHistory = [];
-        
+
         this.bindEvents();
     }
-    
+
     bindEvents() {
         document.addEventListener('DOMContentLoaded', () => {
             // Help toggle button
@@ -23,7 +23,7 @@ class TutorIA {
             if (helpToggle) {
                 helpToggle.addEventListener('click', this.toggleHelpMenu.bind(this));
             }
-            
+
             // Help option buttons
             for (let i = 1; i <= 6; i++) {
                 const helpBtn = document.getElementById(`help-${i}`);
@@ -31,7 +31,7 @@ class TutorIA {
                     helpBtn.addEventListener('click', () => this.getHelp(i));
                 }
             }
-            
+
             // Close help menu when clicking outside
             document.addEventListener('click', (e) => {
                 const helpMenu = document.getElementById('help-menu');
@@ -40,19 +40,19 @@ class TutorIA {
                     this.closeHelpMenu();
                 }
             });
-            
+
             // Clear canvas button
             const clearCanvas = document.getElementById('clear-canvas');
             if (clearCanvas) {
                 clearCanvas.addEventListener('click', this.clearCanvas.bind(this));
             }
-            
+
             // Send query button
             const sendQuery = document.getElementById('send-query');
             if (sendQuery) {
                 sendQuery.addEventListener('click', this.sendQuery.bind(this));
             }
-            
+
             // Query input enter key support
             const queryInput = document.getElementById('query-input');
             if (queryInput) {
@@ -62,34 +62,34 @@ class TutorIA {
                     }
                 });
             }
-            
+
             // Exercise image paste functionality
             this.setupExerciseImagePaste();
-            
+
             // Clear exercise button
             const clearExercise = document.getElementById('clear-exercise');
             if (clearExercise) {
                 clearExercise.addEventListener('click', this.clearExercise.bind(this));
             }
-            
+
             // Clear all button
             const clearAll = document.getElementById('clear-all');
             if (clearAll) {
                 clearAll.addEventListener('click', this.clearAll.bind(this));
             }
-            
+
             // Undo action button
             const undoAction = document.getElementById('undo-action');
             if (undoAction) {
                 undoAction.addEventListener('click', this.undoAction.bind(this));
             }
-            
+
             // Eraser mode button
             const eraserMode = document.getElementById('eraser-mode');
             if (eraserMode) {
                 eraserMode.addEventListener('click', this.toggleEraserMode.bind(this));
             }
-            
+
             // Eraser size control
             const eraserSize = document.getElementById('eraser-size');
             const eraserSizeDisplay = document.getElementById('eraser-size-display');
@@ -105,13 +105,44 @@ class TutorIA {
                     }
                 });
             }
+
+            // Output panel controls
+            const closeOutput = document.getElementById('close-output');
+            if (closeOutput) {
+                closeOutput.addEventListener('click', () => {
+                    const outputPanel = document.getElementById('output-panel');
+                    if (outputPanel) {
+                        outputPanel.classList.add('hidden');
+                    }
+                });
+            }
+
+            const minimizeOutput = document.getElementById('minimize-output');
+            const minimizedOutput = document.getElementById('minimized-output');
+            if (minimizeOutput && minimizedOutput) {
+                minimizeOutput.addEventListener('click', () => {
+                    const outputPanel = document.getElementById('output-panel');
+                    if (outputPanel) {
+                        outputPanel.classList.add('hidden');
+                        minimizedOutput.classList.remove('hidden');
+                    }
+                });
+
+                minimizedOutput.addEventListener('click', () => {
+                    const outputPanel = document.getElementById('output-panel');
+                    if (outputPanel) {
+                        outputPanel.classList.remove('hidden');
+                        minimizedOutput.classList.add('hidden');
+                    }
+                });
+            }
         });
     }
-    
+
     toggleHintMode() {
         this.hintModeActive = !this.hintModeActive;
         const hintToggle = document.getElementById('hint-toggle');
-        
+
         if (hintToggle) {
             if (this.hintModeActive) {
                 hintToggle.classList.add('hint-active');
@@ -120,7 +151,7 @@ class TutorIA {
             }
         }
     }
-    
+
     async getHint() {
         try {
             // Check if canvas has any drawing
@@ -128,29 +159,29 @@ class TutorIA {
                 this.showError('Por favor, dibuja o escribe algo en la pizarra antes de solicitar una pista.');
                 return;
             }
-            
+
             // Show loading indicator
             this.showLoading(true);
-            
+
             // Get canvas image data
             const imageData = whiteboard ? whiteboard.getCanvasImageData() : null;
-            
+
             if (!imageData) {
                 throw new Error('No se pudo obtener la imagen de la pizarra');
             }
-            
+
             // Get exercise text if available
             const exerciseText = document.getElementById('exercise-input')?.value || '';
-            
+
             // Prepare enhanced prompt with exercise context
             let enhancedPrompt = this.tutorPrompt;
             if (exerciseText.trim()) {
                 enhancedPrompt += `\n\nContexto del ejercicio: ${exerciseText}`;
             }
-            
+
             // Prepare API request parts
             const parts = [{ text: enhancedPrompt }];
-            
+
             // Add canvas image
             parts.push({
                 inline_data: {
@@ -158,7 +189,7 @@ class TutorIA {
                     data: imageData
                 }
             });
-            
+
             // Add exercise image if available
             const exerciseImageData = this.getExerciseImageData();
             if (exerciseImageData) {
@@ -170,7 +201,7 @@ class TutorIA {
                 });
                 enhancedPrompt += "\n\nNota: También se ha incluido una imagen del ejercicio para tu análisis.";
             }
-            
+
             const requestBody = {
                 contents: [{ parts }],
                 generationConfig: {
@@ -180,7 +211,7 @@ class TutorIA {
                     maxOutputTokens: 1024,
                 }
             };
-            
+
             // Make API request
             const response = await fetch(`${this.apiUrl}?key=${this.apiKey}`, {
                 method: 'POST',
@@ -189,14 +220,14 @@ class TutorIA {
                 },
                 body: JSON.stringify(requestBody)
             });
-            
+
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
                 throw new Error(this.getErrorMessage(response.status, errorData));
             }
-            
+
             const data = await response.json();
-            
+
             // Extract AI response
             if (data.candidates && data.candidates[0] && data.candidates[0].content) {
                 const aiText = data.candidates[0].content.parts[0].text;
@@ -205,7 +236,7 @@ class TutorIA {
             } else {
                 throw new Error('Respuesta inesperada de la API');
             }
-            
+
         } catch (error) {
             console.error('Error getting hint:', error);
             this.showError(`Error: ${error.message}`);
@@ -213,37 +244,37 @@ class TutorIA {
             this.showLoading(false);
         }
     }
-    
+
     async sendQuery() {
         const queryInput = document.getElementById('query-input');
         const query = queryInput?.value?.trim();
-        
+
         if (!query) {
             this.showError('Por favor, escribe una pregunta antes de enviar.');
             return;
         }
-        
+
         try {
             this.showLoading(true);
-            
+
             // Get canvas image data if available
             const imageData = whiteboard && !whiteboard.isEmpty() ? whiteboard.getCanvasImageData() : null;
-            
+
             // Get exercise text if available
             const exerciseText = document.getElementById('exercise-input')?.value || '';
-            
+
             // Prepare context-aware prompt
             let contextPrompt = `Eres un tutor experto y amigable. Un estudiante te hace la siguiente pregunta: "${query}". `;
-            
+
             if (exerciseText.trim()) {
                 contextPrompt += `El contexto del ejercicio es: ${exerciseText}. `;
             }
-            
+
             contextPrompt += `Proporciona una respuesta útil que guíe al estudiante sin dar la respuesta completa. El idioma de la respuesta debe ser español.`;
-            
+
             // Prepare API request parts
             const parts = [{ text: contextPrompt }];
-            
+
             // Add canvas image if available
             if (imageData) {
                 parts.push({
@@ -253,7 +284,7 @@ class TutorIA {
                     }
                 });
             }
-            
+
             // Add exercise image if available
             const exerciseImageData = this.getExerciseImageData();
             if (exerciseImageData) {
@@ -265,7 +296,7 @@ class TutorIA {
                 });
                 contextPrompt += "\n\nNota: También se ha incluido una imagen del ejercicio para tu análisis.";
             }
-            
+
             const requestBody = {
                 contents: [{ parts }],
                 generationConfig: {
@@ -275,7 +306,7 @@ class TutorIA {
                     maxOutputTokens: 1024,
                 }
             };
-            
+
             // Make API request
             const response = await fetch(`${this.apiUrl}?key=${this.apiKey}`, {
                 method: 'POST',
@@ -284,20 +315,20 @@ class TutorIA {
                 },
                 body: JSON.stringify(requestBody)
             });
-            
+
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
                 throw new Error(this.getErrorMessage(response.status, errorData));
             }
-            
+
             const data = await response.json();
-            
+
             // Extract AI response
             if (data.candidates && data.candidates[0] && data.candidates[0].content) {
                 const aiText = data.candidates[0].content.parts[0].text;
                 this.showResponse(aiText, 'query');
                 this.addToHistory(query, aiText);
-                
+
                 // Clear input
                 if (queryInput) {
                     queryInput.value = '';
@@ -305,7 +336,7 @@ class TutorIA {
             } else {
                 throw new Error('Respuesta inesperada de la API');
             }
-            
+
         } catch (error) {
             console.error('Error sending query:', error);
             this.showError(`Error: ${error.message}`);
@@ -313,22 +344,22 @@ class TutorIA {
             this.showLoading(false);
         }
     }
-    
+
     clearCanvas() {
         if (whiteboard) {
             whiteboard.clearCanvas();
-            
+
             // Clear AI response area
             const aiResponse = document.getElementById('ai-response');
             if (aiResponse) {
                 aiResponse.innerHTML = '<p class="text-gray-500 italic">Las respuestas de la IA aparecerán aquí...</p>';
             }
-            
+
             // Clear response history
             this.responseHistory = [];
         }
     }
-    
+
     getErrorMessage(status, errorData) {
         switch (status) {
             case 400:
@@ -348,14 +379,20 @@ class TutorIA {
                 return 'No se pudo generar una respuesta. Intenta de nuevo.';
         }
     }
-    
+
     showLoading(show) {
         const loadingIndicator = document.getElementById('loadingIndicator');
         const aiResponse = document.getElementById('ai-response');
         const askQuestion = document.getElementById('ask-question');
         const sendQuery = document.getElementById('send-query');
-        
+        const outputPanel = document.getElementById('output-panel');
+
         if (show) {
+            // Show output panel when loading starts
+            if (outputPanel) {
+                outputPanel.classList.remove('hidden');
+            }
+            
             if (loadingIndicator) loadingIndicator.classList.remove('hidden');
             if (aiResponse) aiResponse.classList.add('hidden');
             if (askQuestion) {
@@ -379,91 +416,91 @@ class TutorIA {
             }
         }
     }
-    
+
     showResponse(text, type = 'response') {
         const aiResponse = document.getElementById('ai-response');
         if (aiResponse) {
-            const timestamp = new Date().toLocaleTimeString('es-ES', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
+            const timestamp = new Date().toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit'
             });
-            
+
             const typeLabel = type === 'hint' ? '💡 Pista' : type === 'query' ? '❓ Consulta' : 'Respuesta';
-            
+
             const responseHtml = `
                 <div class="mb-3 p-2 bg-white rounded border-l-4 border-blue-400">
                     <div class="text-xs text-gray-500 mb-1">${typeLabel} - ${timestamp}</div>
                     <div class="text-gray-800">${text}</div>
                 </div>
             `;
-            
+
             // If this is the first response, clear the placeholder
             if (aiResponse.innerHTML.includes('Las respuestas de la IA aparecerán aquí')) {
                 aiResponse.innerHTML = responseHtml;
             } else {
                 aiResponse.innerHTML += responseHtml;
             }
-            
+
             // Scroll to bottom
             aiResponse.scrollTop = aiResponse.scrollHeight;
         }
     }
-    
+
     showError(message) {
         const aiResponse = document.getElementById('ai-response');
         if (aiResponse) {
-            const timestamp = new Date().toLocaleTimeString('es-ES', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
+            const timestamp = new Date().toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit'
             });
-            
+
             const errorHtml = `
                 <div class="mb-3 p-2 bg-red-50 rounded border-l-4 border-red-400">
                     <div class="text-xs text-red-500 mb-1">❌ Error - ${timestamp}</div>
                     <div class="text-red-700 font-medium">${message}</div>
                 </div>
             `;
-            
+
             // If this is the first response, clear the placeholder
             if (aiResponse.innerHTML.includes('Las respuestas de la IA aparecerán aquí')) {
                 aiResponse.innerHTML = errorHtml;
             } else {
                 aiResponse.innerHTML += errorHtml;
             }
-            
+
             // Scroll to bottom
             aiResponse.scrollTop = aiResponse.scrollHeight;
         }
     }
-    
+
     addToHistory(query, response) {
         this.responseHistory.push({
             timestamp: new Date(),
             query: query,
             response: response
         });
-        
+
         // Keep only last 10 interactions
         if (this.responseHistory.length > 10) {
             this.responseHistory = this.responseHistory.slice(-10);
         }
     }
-    
+
     // Method to update API key (for easy configuration)
     setApiKey(key) {
         this.apiKey = key;
     }
-    
+
     // Method to check if API key is configured
     isConfigured() {
         return this.apiKey && this.apiKey !== 'YOUR_API_KEY_HERE';
     }
-    
+
     // Method to get response history
     getHistory() {
         return this.responseHistory;
     }
-    
+
     // Setup exercise image paste functionality
     setupExerciseImagePaste() {
         const exerciseContent = document.getElementById('exercise-content');
@@ -471,16 +508,16 @@ class TutorIA {
         const imageContainer = document.getElementById('exercise-image-container');
         const exerciseImage = document.getElementById('exercise-image');
         const removeImageBtn = document.getElementById('remove-exercise-image');
-        
+
         if (!exerciseContent || !exerciseInput) return;
-        
+
         // Handle paste events on the exercise content area
         exerciseContent.addEventListener('paste', (e) => {
             e.preventDefault();
-            
+
             const items = e.clipboardData.items;
             let hasImage = false;
-            
+
             // Check for images first
             for (let item of items) {
                 if (item.type.indexOf('image') !== -1) {
@@ -490,7 +527,7 @@ class TutorIA {
                     break;
                 }
             }
-            
+
             // If no image, handle text
             if (!hasImage) {
                 const text = e.clipboardData.getData('text/plain');
@@ -499,77 +536,77 @@ class TutorIA {
                     const start = exerciseInput.selectionStart;
                     const end = exerciseInput.selectionEnd;
                     const currentText = exerciseInput.value;
-                    
+
                     exerciseInput.value = currentText.substring(0, start) + text + currentText.substring(end);
                     exerciseInput.selectionStart = exerciseInput.selectionEnd = start + text.length;
                     exerciseInput.focus();
                 }
             }
         });
-        
+
         // Handle remove image button
         if (removeImageBtn) {
             removeImageBtn.addEventListener('click', () => {
                 this.removeExerciseImage();
             });
         }
-        
+
         // Also allow paste directly on textarea
         exerciseInput.addEventListener('paste', (e) => {
             // Let the default paste behavior handle text
             // Image paste will be handled by the parent container
         });
     }
-    
+
     // Handle pasted image in exercise section
     handleExerciseImagePaste(file) {
         if (!file || !file.type.startsWith('image/')) {
             this.showError('Por favor, pega una imagen válida.');
             return;
         }
-        
+
         // Check file size (limit to 5MB)
         if (file.size > 5 * 1024 * 1024) {
             this.showError('La imagen es demasiado grande. Máximo 5MB.');
             return;
         }
-        
+
         const reader = new FileReader();
         reader.onload = (e) => {
             const imageContainer = document.getElementById('exercise-image-container');
             const exerciseImage = document.getElementById('exercise-image');
-            
+
             if (exerciseImage && imageContainer) {
                 exerciseImage.src = e.target.result;
                 imageContainer.classList.remove('hidden');
-                
+
                 // Store image data for API calls
                 this.exerciseImageData = e.target.result;
-                
+
                 // Show success message
                 this.showExerciseImageSuccess();
             }
         };
-        
+
         reader.onerror = () => {
             this.showError('Error al cargar la imagen.');
         };
-        
+
         reader.readAsDataURL(file);
     }
-    
+
     // Remove exercise image
     removeExerciseImage() {
         const imageContainer = document.getElementById('exercise-image-container');
         const exerciseImage = document.getElementById('exercise-image');
-        
+
         if (imageContainer && exerciseImage) {
             imageContainer.classList.add('hidden');
             exerciseImage.src = '';
             this.exerciseImageData = null;
         }
     }
-    
+
     // Show success message for image paste
     showExerciseImageSuccess() {
         // Create temporary success indicator
@@ -578,9 +615,9 @@ class TutorIA {
             const successMsg = document.createElement('div');
             successMsg.className = 'text-xs text-green-600 mt-1';
             successMsg.textContent = '✅ Imagen pegada correctamente';
-            
+
             exerciseContent.appendChild(successMsg);
-            
+
             // Remove after 3 seconds
             setTimeout(() => {
                 if (successMsg.parentNode) {
@@ -589,7 +626,7 @@ class TutorIA {
             }, 3000);
         }
     }
-    
+
     // Get exercise image data for API calls
     getExerciseImageData() {
         if (this.exerciseImageData) {
@@ -598,30 +635,30 @@ class TutorIA {
         }
         return null;
     }
-    
+
     // Clear exercise content
     clearExercise() {
         const exerciseInput = document.getElementById('exercise-input');
         const imageContainer = document.getElementById('exercise-image-container');
         const exerciseImage = document.getElementById('exercise-image');
-        
+
         // Clear text
         if (exerciseInput) {
             exerciseInput.value = '';
             exerciseInput.style.height = 'auto';
         }
-        
+
         // Clear image
         if (imageContainer && exerciseImage) {
             imageContainer.classList.add('hidden');
             exerciseImage.src = '';
             this.exerciseImageData = null;
         }
-        
+
         // Show confirmation
         this.showExerciseSuccess('🗑️ Ejercicio limpiado');
     }
-    
+
     // Clear all content (canvas + exercise + responses)
     clearAll() {
         // Confirm action
@@ -630,24 +667,24 @@ class TutorIA {
             if (whiteboard) {
                 whiteboard.clearCanvas();
             }
-            
+
             // Clear exercise
             this.clearExercise();
-            
+
             // Clear AI responses
             const aiResponse = document.getElementById('ai-response');
             if (aiResponse) {
                 aiResponse.innerHTML = '<p class="text-gray-500 italic">Las respuestas de la IA aparecerán aquí...</p>';
             }
-            
+
             // Clear response history
             this.responseHistory = [];
-            
+
             // Show confirmation
             this.showSuccess('🗑️ Todo el contenido ha sido eliminado');
         }
     }
-    
+
     // Undo last action
     undoAction() {
         if (whiteboard && whiteboard.undo) {
@@ -656,7 +693,7 @@ class TutorIA {
             this.showError('No hay acciones para deshacer');
         }
     }
-    
+
     // Show success message in exercise area
     showExerciseSuccess(message) {
         const exerciseContent = document.getElementById('exercise-content');
@@ -664,9 +701,9 @@ class TutorIA {
             const successMsg = document.createElement('div');
             successMsg.className = 'text-xs text-green-600 mt-1 p-1 bg-green-50 rounded';
             successMsg.textContent = message;
-            
+
             exerciseContent.appendChild(successMsg);
-            
+
             // Remove after 2 seconds
             setTimeout(() => {
                 if (successMsg.parentNode) {
@@ -675,41 +712,41 @@ class TutorIA {
             }, 2000);
         }
     }
-    
+
     // Show general success message
     showSuccess(message) {
         const aiResponse = document.getElementById('ai-response');
         if (aiResponse) {
-            const timestamp = new Date().toLocaleTimeString('es-ES', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
+            const timestamp = new Date().toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit'
             });
-            
+
             const successHtml = `
                 <div class="mb-3 p-2 bg-green-50 rounded border-l-4 border-green-400">
                     <div class="text-xs text-green-500 mb-1">✅ Acción - ${timestamp}</div>
                     <div class="text-green-700 font-medium">${message}</div>
                 </div>
             `;
-            
+
             // If this is the first response, clear the placeholder
             if (aiResponse.innerHTML.includes('Las respuestas de la IA aparecerán aquí')) {
                 aiResponse.innerHTML = successHtml;
             } else {
                 aiResponse.innerHTML += successHtml;
             }
-            
+
             // Scroll to bottom
             aiResponse.scrollTop = aiResponse.scrollHeight;
         }
     }
-    
+
     // Toggle eraser mode
     toggleEraserMode() {
         const eraserBtn = document.getElementById('eraser-mode');
         const eraserSize = document.getElementById('eraser-size');
         const eraserSizeControl = document.getElementById('eraser-size-control');
-        
+
         if (whiteboard && eraserBtn) {
             if (whiteboard.currentTool === 'eraser') {
                 // Switch back to pen
@@ -717,46 +754,46 @@ class TutorIA {
                 eraserBtn.textContent = '🧽 Activar Borrador';
                 eraserBtn.classList.remove('bg-orange-500', 'text-white');
                 eraserBtn.classList.add('bg-gray-300', 'text-gray-700');
-                
+
                 // Hide eraser size control
                 if (eraserSizeControl) {
                     eraserSizeControl.classList.add('hidden');
                 }
-                
+
                 // Reset cursor to normal
                 this.updateCanvasCursor('pen', 2);
-                
+
             } else {
                 // Switch to eraser
                 whiteboard.setTool('eraser');
-                
+
                 // Show eraser size control
                 if (eraserSizeControl) {
                     eraserSizeControl.classList.remove('hidden');
                 }
-                
+
                 // Set eraser size
                 const eraserSizeValue = eraserSize ? parseInt(eraserSize.value) : 15;
                 if (eraserSize) {
                     whiteboard.brushSize = eraserSizeValue;
                     whiteboard.ctx.lineWidth = whiteboard.brushSize;
                 }
-                
+
                 eraserBtn.textContent = '✏️ Activar Lápiz';
                 eraserBtn.classList.remove('bg-gray-300', 'text-gray-700');
                 eraserBtn.classList.add('bg-orange-500', 'text-white');
-                
+
                 // Set custom eraser cursor
                 this.updateCanvasCursor('eraser', eraserSizeValue);
             }
         }
     }
-    
+
     // Update canvas cursor based on tool and size
     updateCanvasCursor(tool, size) {
         const canvas = document.getElementById('whiteboard');
         if (!canvas) return;
-        
+
         if (tool === 'pen') {
             canvas.style.cursor = 'crosshair';
         } else if (tool === 'eraser') {
@@ -764,21 +801,21 @@ class TutorIA {
             const cursorSize = Math.max(10, Math.min(size, 50)); // Limit cursor size for visibility
             const cursorSvg = `
                 <svg width="${cursorSize}" height="${cursorSize}" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="${cursorSize/2}" cy="${cursorSize/2}" r="${(cursorSize-2)/2}" 
+                    <circle cx="${cursorSize / 2}" cy="${cursorSize / 2}" r="${(cursorSize - 2) / 2}" 
                             fill="none" stroke="black" stroke-width="2" opacity="0.7"/>
                 </svg>
             `;
             const encodedSvg = encodeURIComponent(cursorSvg);
             const cursorUrl = `data:image/svg+xml,${encodedSvg}`;
-            canvas.style.cursor = `url("${cursorUrl}") ${cursorSize/2} ${cursorSize/2}, auto`;
+            canvas.style.cursor = `url("${cursorUrl}") ${cursorSize / 2} ${cursorSize / 2}, auto`;
         }
     }
-    
+
     // Toggle help menu
     toggleHelpMenu() {
         const helpMenu = document.getElementById('help-menu');
         const helpArrow = document.getElementById('help-arrow');
-        
+
         if (helpMenu && helpArrow) {
             if (helpMenu.classList.contains('hidden')) {
                 helpMenu.classList.remove('hidden');
@@ -789,39 +826,42 @@ class TutorIA {
             }
         }
     }
-    
+
     // Close help menu
     closeHelpMenu() {
         const helpMenu = document.getElementById('help-menu');
         const helpArrow = document.getElementById('help-arrow');
-        
+
         if (helpMenu && helpArrow) {
             helpMenu.classList.add('hidden');
             helpArrow.style.transform = 'rotate(0deg)';
         }
     }
-    
+
     // Get help based on type (1-6)
     async getHelp(helpType) {
         try {
+            console.log(`Getting help for type: ${helpType}`);
+            console.log(`API Key configured: ${this.apiKey !== 'YOUR_API_KEY_HERE'}`);
+            
             // Close help menu
             this.closeHelpMenu();
-            
+
             // Show loading indicator
             this.showLoading(true);
-            
+
             // Get canvas image data if available
             const imageData = whiteboard && !whiteboard.isEmpty() ? whiteboard.getCanvasImageData() : null;
-            
+
             // Get exercise text if available
             const exerciseText = document.getElementById('exercise-input')?.value || '';
-            
+
             // Prepare specific prompt based on help type
             let helpPrompt = this.getHelpPrompt(helpType, exerciseText);
-            
+
             // Prepare API request parts
             const parts = [{ text: helpPrompt }];
-            
+
             // Add canvas image if available
             if (imageData) {
                 parts.push({
@@ -831,7 +871,7 @@ class TutorIA {
                     }
                 });
             }
-            
+
             // Add exercise image if available
             const exerciseImageData = this.getExerciseImageData();
             if (exerciseImageData) {
@@ -842,7 +882,7 @@ class TutorIA {
                     }
                 });
             }
-            
+
             const requestBody = {
                 contents: [{ parts }],
                 generationConfig: {
@@ -852,7 +892,7 @@ class TutorIA {
                     maxOutputTokens: 1024,
                 }
             };
-            
+
             // Make API request
             const response = await fetch(`${this.apiUrl}?key=${this.apiKey}`, {
                 method: 'POST',
@@ -861,14 +901,14 @@ class TutorIA {
                 },
                 body: JSON.stringify(requestBody)
             });
-            
+
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
                 throw new Error(this.getErrorMessage(response.status, errorData));
             }
-            
+
             const data = await response.json();
-            
+
             // Extract AI response
             if (data.candidates && data.candidates[0] && data.candidates[0].content) {
                 const aiText = data.candidates[0].content.parts[0].text;
@@ -878,7 +918,7 @@ class TutorIA {
             } else {
                 throw new Error('Respuesta inesperada de la API');
             }
-            
+
         } catch (error) {
             console.error('Error getting help:', error);
             this.showError(`Error: ${error.message}`);
@@ -886,35 +926,90 @@ class TutorIA {
             this.showLoading(false);
         }
     }
-    
+
     // Get specific prompt for each help type
     getHelpPrompt(helpType, exerciseText) {
         const baseContext = exerciseText ? `\n\nContexto del ejercicio: ${exerciseText}` : '';
-        
+
+        // Define tutor prompts object
+        const tutorPrompts = {
+            initial: `Eres un tutor experto y amigable. Analiza cuidadosamente la imagen de la pizarra del estudiante. Tu trabajo es:
+1. INTERPRETAR: Examina cada trazo, símbolo, número o texto en la pizarra. Si no puedes entender algo con 95% de certeza, pide aclaración específica.
+2. CUANDO ESTÉS 95% SEGURO del contenido:
+- Da retroalimentación positiva sobre lo que el estudiante ha hecho correctamente
+- Señala qué podría mejorarse o qué casos no está considerando
+- Proporciona insights valiosos sin dar la solución completa
+3. IMPORTANTE: Si no entiendes claramente lo que está escrito, responde: "No puedo leer claramente [parte específica]. ¿Podrías escribirlo de forma más legible o describir lo que intentas resolver?"
+Responde en español de manera constructiva y alentadora.`,
+
+            stuck: `El estudiante dice estar atascado. Como tutor experto:
+1. Ayúdale a considerar más casos y entender mejor la lógica del problema
+2. Haz preguntas que lo guíen a descubrir qué está pasando por alto
+3. No des la solución, sino herramientas para pensar diferente
+4. Analiza lo que ha dibujado y construye sobre eso
+Responde en español de manera que despierte su curiosidad por explorar más.`,
+
+            hint: `El estudiante pide una pista. Como tutor experto:
+1. Analiza lo que ya ha descubierto en la pizarra
+2. Da una pista que lo ayude a avanzar SOLO en lo que NO ha resuelto aún
+3. NO repitas lo que ya sabe o ha hecho
+4. La pista debe ser suficiente para el siguiente paso, no más
+Responde en español con una pista específica y útil.`,
+
+            clarify: `El estudiante quiere que clarifies el problema. Como tutor experto:
+1. Proporciona más ejemplos de entrada y salida
+2. Explica mejor las condiciones del problema
+3. NO des pistas sobre la solución, solo clarifica el enunciado
+4. Ayuda a entender qué se está pidiendo exactamente
+Responde en español enfocándote solo en aclarar el problema.`,
+
+            next_step: `El estudiante pide una sugerencia del siguiente paso. Como tutor experto:
+1. Analiza dónde está actualmente en su solución
+2. Sugiere el próximo paso lógico sin ser obvio
+3. NO des la fórmula exacta o la solución directa
+4. Guíalo hacia el siguiente razonamiento que necesita hacer
+Responde en español con una sugerencia sutil pero útil.`,
+
+            verify: `El estudiante cree tener la solución. Como tutor experto:
+1. Analiza su propuesta cuidadosamente
+RESPONDER CON SI O NO
+2. Si es correcta: Felicítalo y explica por qué está bien
+3. Si es incorrecta: Proporciona un contraejemplo específico que muestre el error
+4. Sé constructivo y mantén su motivación alta
+Responde en español con evaluación honesta y constructiva. No des respuesta o solucion`,
+
+            solution: `DAS LA SOLUCION!. El estudiante pide la solución completa. Como tutor experto:
+1. Primero, aliéntalo reconociendo su esfuerzo y progreso
+2. Presenta la solución completa paso a paso
+3. Contrasta: qué hizo bien, qué hizo mal, qué no consideró
+4. Termina con: "El patrón clave para resolver este tipo de problemas era..."
+Responde en español de manera comprensiva y educativa. Solo en este caso es cuando provees de la solucion en ningun otro caso puedes hacerlo`
+        };
+
         switch (helpType) {
             case 1: // Estoy Atascado
-                return `Eres un tutor experto y amigable. Un estudiante dice "Estoy atascado" con este problema. Tu objetivo es ayudarle a entender mejor el problema y considerar más casos. NO des la respuesta final. En su lugar, ayúdale a analizar el problema desde diferentes ángulos, identifica qué aspectos podrían estar confundiéndole, y sugiere formas de abordar el problema paso a paso. Haz preguntas que le ayuden a pensar más profundamente sobre la lógica del problema. El idioma de la respuesta debe ser español.${baseContext}`;
-                
+                return tutorPrompts.stuck + baseContext;
+
             case 2: // Necesito una Pista
-                return `Eres un tutor experto y amigable. Un estudiante dice "Necesito una pista" para este problema. Tu objetivo es dar una pista específica que le ayude a avanzar hacia la solución, pero que NO sea algo que ya haya descubierto o que sea demasiado obvio. Analiza lo que ya ha hecho y proporciona el siguiente paso lógico sin dar la respuesta completa. La pista debe ser útil pero no revelar demasiado. El idioma de la respuesta debe ser español.${baseContext}`;
-                
+                return tutorPrompts.hint + baseContext;
+
             case 3: // Aclarar el Problema
-                return `Eres un tutor experto y amigable. Un estudiante dice "Aclarar el problema" porque necesita más información. Tu objetivo es proporcionar más ejemplos de salida e información sobre el problema (NO sobre la solución). Explica mejor qué se está pidiendo, da ejemplos adicionales de casos de entrada y salida, y clarifica cualquier aspecto confuso del enunciado. Enfócate en el problema en sí, no en cómo resolverlo. El idioma de la respuesta debe ser español.${baseContext}`;
-                
+                return tutorPrompts.clarify + baseContext;
+
             case 4: // Siguiente Paso
-                return `Eres un tutor experto y amigable. Un estudiante pide "Siguiente paso" para este problema. Tu objetivo es sugerir cuál debería ser su próximo paso, pero sin hacer obvio el problema matemático o la solución en sí. Analiza lo que ya ha hecho y sugiere la siguiente acción o consideración que debería tomar, pero de manera que le haga pensar y no le dé la respuesta directamente. El idioma de la respuesta debe ser español.${baseContext}`;
-                
+                return tutorPrompts.next_step + baseContext;
+
             case 5: // Verificar Solución
-                return `Eres un tutor experto y amigable. Un estudiante cree que ya tiene la solución del problema y quiere verificación. Tu objetivo es revisar si su solución es correcta. Si es correcta, felicítale y explica por qué está bien. Si NO es correcta, proporciona un contraejemplo específico que demuestre por qué no funciona, pero hazlo de manera constructiva. Ayúdale a entender dónde está el error sin desanimarlo. El idioma de la respuesta debe ser español.${baseContext}`;
-                
+                return tutorPrompts.verify + baseContext;
+
             case 6: // Mostrar Solución
-                return `Eres un tutor experto y amigable. Un estudiante dice "Quiero la solución" para este problema. Primero, anímale y recuérdale que está haciendo progreso al intentar resolverlo. Luego proporciona la solución completa, pero de manera educativa: contrasta lo que hizo bien, lo que hizo mal, y lo que no consideró o no pudo descifrar. Termina explicando cuál era el patrón clave para resolver este tipo de problema. Sé alentador pero educativo. El idioma de la respuesta debe ser español.${baseContext}`;
-                
+                return tutorPrompts.solution + baseContext;
+
             default:
-                return `Eres un tutor experto y amigable. Ayuda al estudiante con este problema de manera Socrática. El idioma de la respuesta debe ser español.${baseContext}`;
+                return tutorPrompts.initial + baseContext;
         }
     }
-    
+
     // Get help label for display
     getHelpLabel(helpType) {
         switch (helpType) {
@@ -927,34 +1022,34 @@ class TutorIA {
             default: return '🆘 Ayuda';
         }
     }
-    
+
     // Enhanced showResponse to handle help types
     showResponse(text, type = 'response', customLabel = null) {
         const aiResponse = document.getElementById('ai-response');
         if (aiResponse) {
-            const timestamp = new Date().toLocaleTimeString('es-ES', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
+            const timestamp = new Date().toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit'
             });
-            
+
             let typeLabel = customLabel || 'Respuesta';
             if (type === 'hint') typeLabel = '💡 Pista';
             else if (type === 'query') typeLabel = '❓ Consulta';
-            
+
             const responseHtml = `
                 <div class="mb-3 p-2 bg-white rounded border-l-4 border-blue-400">
                     <div class="text-xs text-gray-500 mb-1">${typeLabel} - ${timestamp}</div>
                     <div class="text-gray-800">${text}</div>
                 </div>
             `;
-            
+
             // If this is the first response, clear the placeholder
             if (aiResponse.innerHTML.includes('Las respuestas de la IA aparecerán aquí')) {
                 aiResponse.innerHTML = responseHtml;
             } else {
                 aiResponse.innerHTML += responseHtml;
             }
-            
+
             // Scroll to bottom
             aiResponse.scrollTop = aiResponse.scrollHeight;
         }
@@ -974,7 +1069,7 @@ function setGeminiApiKey(key) {
 document.addEventListener('DOMContentLoaded', () => {
     if (!tutorIA.isConfigured()) {
         console.warn('⚠️  API Key not configured. Please set your Gemini API key by calling: setGeminiApiKey("your-api-key-here")');
-        
+
         // Show warning in UI after a short delay
         setTimeout(() => {
             const aiResponse = document.getElementById('ai-response');
@@ -993,6 +1088,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }, 1000);
     }
-    
+
     console.log('TutorIA New UI initialized successfully');
 });

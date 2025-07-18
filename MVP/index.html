@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TutorIA: Tu Pizarra Inteligente</title>
+    <!-- Tailwind CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Title -->
+        <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">
+            TutorIA: Tu Pizarra Inteligente
+        </h1>
+        
+        <!-- Main Layout -->
+        <div class="flex flex-col lg:flex-row gap-6 max-w-6xl mx-auto">
+            <!-- Left Column - Canvas and Controls (2/3 width) -->
+            <div class="lg:w-2/3">
+                <!-- Canvas Container -->
+                <div class="bg-white rounded-lg shadow-md p-4 mb-4">
+                    <canvas 
+                        id="whiteboard" 
+                        width="600" 
+                        height="400"
+                        class="border-2 border-gray-300 rounded cursor-crosshair w-full canvas-responsive"
+                    ></canvas>
+                </div>
+                
+                <!-- Control Buttons -->
+                <div class="flex gap-4 justify-center">
+                    <button 
+                        id="getHintBtn" 
+                        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-200 flex items-center gap-2"
+                    >
+                        💡 Obtener Pista
+                    </button>
+                    <button 
+                        id="clearBtn" 
+                        class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-200 flex items-center gap-2"
+                    >
+                        🗑 Borrar
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Right Column - AI Response (1/3 width) -->
+            <div class="lg:w-1/3">
+                <div class="bg-white rounded-lg shadow-md p-4 h-full">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-800">Pista de la IA</h3>
+                    
+                    <!-- Loading Indicator -->
+                    <div id="loadingIndicator" class="hidden text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                        <p class="mt-2 text-gray-600">Pensando...</p>
+                    </div>
+                    
+                    <!-- Response Text Area -->
+                    <div 
+                        id="aiResponse" 
+                        class="bg-gray-50 border rounded-lg p-4 h-80 overflow-y-auto text-gray-700 leading-relaxed"
+                    >
+                        Escribe o dibuja tu problema en la pizarra y presiona 'Obtener Pista'.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="text-center mt-8 text-gray-500 text-sm">
+            <p>Powered by Google Gemini AI | Hackathon Tech AI 2025</p>
+        </div>
+    </div>
+
+    <!-- JavaScript Files -->
+    <script src="draw.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

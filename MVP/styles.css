@@ -1,0 +1,98 @@
+/* Custom CSS for TutorIA */
+
+/* Canvas responsiveness */
+.canvas-responsive {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Mobile responsiveness for canvas */
+@media (max-width: 768px) {
+    #whiteboard {
+        height: 300px !important;
+    }
+    
+    .canvas-responsive {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+}
+
+/* Ensure proper canvas scaling on mobile */
+@media (max-width: 640px) {
+    #whiteboard {
+        height: 250px !important;
+    }
+    
+    /* Stack buttons vertically on very small screens */
+    .flex.gap-4.justify-center {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .flex.gap-4.justify-center button {
+        width: 200px;
+    }
+}
+
+/* Loading animation enhancement */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Smooth transitions for all interactive elements */
+button {
+    transition: all 0.2s ease-in-out;
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+/* Custom scrollbar for response area */
+#aiResponse::-webkit-scrollbar {
+    width: 8px;
+}
+
+#aiResponse::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#aiResponse::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+#aiResponse::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Canvas cursor style */
+.cursor-crosshair {
+    cursor: crosshair;
+}
+
+/* Prevent text selection on canvas */
+canvas {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
+/* Ensure proper aspect ratio maintenance */
+#whiteboard {
+    display: block;
+    border-radius: 8px;
+}

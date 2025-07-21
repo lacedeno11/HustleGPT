@@ -1,257 +1,168 @@
-// Drawing functionality for TutorIA whiteboard
-
-class WhiteboardDrawing {
-    constructor(canvasId) {
+class Whiteboard {
+    constructor(canvasId, cursorId) {
         this.canvas = document.getElementById(canvasId);
-        this.ctx = this.canvas.getContext('2d');
+        this.context = this.canvas.getContext('2d');
+        this.eraserCursor = document.getElementById(cursorId);
         this.isDrawing = false;
-        this.lastX = 0;
-        this.lastY = 0;
-        
-        // Drawing state
-        this.currentTool = 'pen'; // 'pen' or 'eraser'
-        this.brushSize = 2;
-        this.undoStack = [];
-        this.maxUndoSteps = 20;
-        
-        this.setupCanvas();
+        this.mode = 'pen'; // 'pen' or 'eraser'
+        this.brushSize = 5;
+        this.history = [];
+
+        this.resizeCanvas();
         this.bindEvents();
-        this.setupDrawingTools();
-        this.saveState(); // Save initial blank state
+        this.saveState(); // Guardar el estado inicial en blanco
     }
-    
-    setupCanvas() {
-        // Set canvas drawing properties
-        this.ctx.strokeStyle = '#000000'; // Black stroke
-        this.ctx.lineWidth = 2; // 2px width
-        this.ctx.lineCap = 'round'; // Round cap
-        this.ctx.lineJoin = 'round';
-        
-        // Fill canvas with white background
-        this.ctx.fillStyle = '#FFFFFF';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    }
-    
+
     bindEvents() {
-        // Mouse events for drawing
-        this.canvas.addEventListener('mousedown', this.startDrawing.bind(this));
-        this.canvas.addEventListener('mousemove', this.draw.bind(this));
-        this.canvas.addEventListener('mouseup', this.stopDrawing.bind(this));
-        this.canvas.addEventListener('mouseout', this.stopDrawing.bind(this));
-        
-        // Prevent context menu on right click
-        this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-    }
-    
-    getMousePos(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        const scaleX = this.canvas.width / rect.width;
-        const scaleY = this.canvas.height / rect.height;
-        
-        return {
-            x: (e.clientX - rect.left) * scaleX,
-            y: (e.clientY - rect.top) * scaleY
-        };
-    }
-    
-    startDrawing(e) {
-        this.isDrawing = true;
-        const pos = this.getMousePos(e);
-        this.lastX = pos.x;
-        this.lastY = pos.y;
-        
-        // Start a new path
-        this.ctx.beginPath();
-        this.ctx.moveTo(this.lastX, this.lastY);
-    }
-    
-    draw(e) {
-        if (!this.isDrawing) return;
-        
-        const pos = this.getMousePos(e);
-        
-        // Draw line from last position to current position
-        this.ctx.beginPath();
-        this.ctx.moveTo(this.lastX, this.lastY);
-        this.ctx.lineTo(pos.x, pos.y);
-        this.ctx.stroke();
-        
-        // Update last position
-        this.lastX = pos.x;
-        this.lastY = pos.y;
-    }
-    
-    stopDrawing() {
-        if (this.isDrawing) {
+        window.addEventListener('resize', () => this.resizeCanvas());
+        this.canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
+        this.canvas.addEventListener('mouseup', () => this.stopDrawing());
+        this.canvas.addEventListener('mouseleave', () => {
             this.isDrawing = false;
-            // Save state for undo functionality
-            this.saveState();
-        }
-    }
-    
-    clearCanvas() {
-        // Clear the entire canvas
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Refill with white background
-        this.ctx.fillStyle = '#FFFFFF';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Reset drawing properties (in case they were modified)
-        this.setupCanvas();
-    }
-    
-    getCanvasImage() {
-        // Convert canvas to Base64 PNG image
-        return this.canvas.toDataURL('image/png');
-    }
-    
-    getCanvasImageData() {
-        // Get just the Base64 data without the data URL prefix
-        const dataURL = this.getCanvasImage();
-        return dataURL.replace('data:image/png;base64,', '');
-    }
-    
-    isEmpty() {
-        // Check if canvas is empty (only white background)
-        const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-        const data = imageData.data;
-        
-        // Check if all pixels are white (255, 255, 255, 255)
-        for (let i = 0; i < data.length; i += 4) {
-            if (data[i] !== 255 || data[i + 1] !== 255 || data[i + 2] !== 255) {
-                return false; // Found a non-white pixel
-            }
-        }
-        return true;
-    }
-    
-    // Setup drawing tools
-    setupDrawingTools() {
-        // Pen tool
-        const penTool = document.getElementById('pen-tool');
-        if (penTool) {
-            penTool.addEventListener('click', () => {
-                this.setTool('pen');
-                this.updateToolButtons();
-            });
-        }
-        
-        // Eraser tool
-        const eraserTool = document.getElementById('eraser-tool');
-        if (eraserTool) {
-            eraserTool.addEventListener('click', () => {
-                this.setTool('eraser');
-                this.updateToolButtons();
-            });
-        }
-        
-        // Brush size slider
-        const brushSize = document.getElementById('brush-size');
-        const brushSizeDisplay = document.getElementById('brush-size-display');
-        if (brushSize && brushSizeDisplay) {
-            brushSize.addEventListener('input', (e) => {
-                this.brushSize = parseInt(e.target.value);
-                this.ctx.lineWidth = this.brushSize;
-                brushSizeDisplay.textContent = `${this.brushSize}px`;
-            });
-        }
-    }
-    
-    // Set drawing tool
-    setTool(tool) {
-        this.currentTool = tool;
-        
-        if (tool === 'pen') {
-            this.ctx.globalCompositeOperation = 'source-over';
-            this.ctx.strokeStyle = '#000000';
-            this.brushSize = 2; // Always use minimum size for pen
-            this.ctx.lineWidth = this.brushSize;
-            this.canvas.style.cursor = 'crosshair';
-        } else if (tool === 'eraser') {
-            this.ctx.globalCompositeOperation = 'destination-out';
-            // Brush size will be set by the eraser controls
-            this.ctx.lineWidth = this.brushSize;
-            this.canvas.style.cursor = 'grab'; // This will be overridden by custom cursor
-        }
-    }
-    
-    // Update tool button states
-    updateToolButtons() {
-        const penTool = document.getElementById('pen-tool');
-        const eraserTool = document.getElementById('eraser-tool');
-        
-        if (penTool && eraserTool) {
-            // Remove active class from all tools
-            penTool.classList.remove('active', 'bg-blue-500', 'text-white');
-            eraserTool.classList.remove('active', 'bg-blue-500', 'text-white');
-            
-            penTool.classList.add('bg-gray-300', 'text-gray-700');
-            eraserTool.classList.add('bg-gray-300', 'text-gray-700');
-            
-            // Add active class to current tool
-            if (this.currentTool === 'pen') {
-                penTool.classList.remove('bg-gray-300', 'text-gray-700');
-                penTool.classList.add('active', 'bg-blue-500', 'text-white');
-            } else if (this.currentTool === 'eraser') {
-                eraserTool.classList.remove('bg-gray-300', 'text-gray-700');
-                eraserTool.classList.add('active', 'bg-blue-500', 'text-white');
-            }
-        }
-    }
-    
-    // Save canvas state for undo
-    saveState() {
-        this.undoStack.push(this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height));
-        
-        // Limit undo stack size
-        if (this.undoStack.length > this.maxUndoSteps) {
-            this.undoStack.shift();
-        }
-    }
-    
-    // Undo last action
-    undo() {
-        if (this.undoStack.length > 1) {
-            // Remove current state
-            this.undoStack.pop();
-            
-            // Restore previous state
-            const previousState = this.undoStack[this.undoStack.length - 1];
-            this.ctx.putImageData(previousState, 0, 0);
-            
-            return true;
-        }
-        return false;
-    }
-}
+            if (this.eraserCursor) this.eraserCursor.style.display = 'none';
+        });
+        this.canvas.addEventListener('mousemove', (e) => this.draw(e));
 
-// Initialize drawing when DOM is loaded
-let whiteboard;
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize whiteboard drawing
-    whiteboard = new WhiteboardDrawing('whiteboard');
-    
-    // Bind clear button (support both old and new IDs)
-    const clearBtn = document.getElementById('clearBtn') || document.getElementById('clear-canvas');
-    if (clearBtn) {
-        clearBtn.addEventListener('click', function() {
-            whiteboard.clearCanvas();
-            
-            // Also clear AI response (support both old and new IDs)
-            const aiResponse = document.getElementById('aiResponse') || document.getElementById('ai-response');
-            if (aiResponse) {
-                if (aiResponse.id === 'ai-response') {
-                    // New design
-                    aiResponse.innerHTML = '<p class="text-gray-500 italic">Las respuestas de la IA aparecerán aquí...</p>';
-                } else {
-                    // Old design
-                    aiResponse.textContent = "Escribe o dibuja tu problema en la pizarra y presiona 'Obtener Pista'.";
-                }
+        // Eventos para el cursor personalizado del borrador
+        this.canvas.addEventListener('mouseenter', () => {
+            if (this.mode === 'eraser' && this.eraserCursor) {
+                this.eraserCursor.style.display = 'block';
             }
         });
     }
+
+    resizeCanvas() {
+        const parent = this.canvas.parentElement;
+        this.canvas.width = parent.clientWidth;
+        this.canvas.height = parent.clientHeight;
+        this.redrawHistory(); // Redibujar el contenido al cambiar el tamaño
+    }
+
+    setMode(newMode) {
+        this.mode = newMode;
+        if (this.mode === 'pen') {
+            this.canvas.style.cursor = 'crosshair';
+            if (this.eraserCursor) this.eraserCursor.style.display = 'none';
+        } else if (this.mode === 'eraser') {
+            this.canvas.style.cursor = 'none'; // Ocultar cursor por defecto
+        }
+    }
+
+    setBrushSize(size) {
+        this.brushSize = size;
+        if (this.mode === 'eraser' && this.eraserCursor) {
+            this.eraserCursor.style.width = `${size}px`;
+            this.eraserCursor.style.height = `${size}px`;
+            this.eraserCursor.style.marginLeft = `-${size/2}px`;
+            this.eraserCursor.style.marginTop = `-${size/2}px`;
+        }
+    }
+
+    startDrawing(e) {
+        this.isDrawing = true;
+        this.context.beginPath();
+        this.context.moveTo(e.offsetX, e.offsetY);
+    }
+
+    stopDrawing() {
+        if (this.isDrawing) {
+            this.isDrawing = false;
+            this.context.closePath();
+            this.saveState(); // Guardar estado después de un trazo
+        }
+    }
+
+    draw(e) {
+        // Mover el cursor personalizado del borrador
+        if (this.mode === 'eraser' && this.eraserCursor) {
+            this.eraserCursor.style.left = `${e.clientX}px`;
+            this.eraserCursor.style.top = `${e.clientY}px`;
+        }
+
+        if (!this.isDrawing) return;
+
+        this.context.lineWidth = this.brushSize;
+        this.context.lineCap = 'round';
+        this.context.strokeStyle = this.mode === 'pen' ? '#000000' : '#FFFFFF'; // Blanco para borrar
+        this.context.globalCompositeOperation = this.mode === 'pen' ? 'source-over' : 'destination-out';
+
+        this.context.lineTo(e.offsetX, e.offsetY);
+        this.context.stroke();
+    }
     
-    console.log('Whiteboard drawing initialized successfully');
+    saveState() {
+        if (this.history.length > 20) { // Limitar el historial
+            this.history.shift();
+        }
+        this.history.push(this.context.getImageData(0, 0, this.canvas.width, this.canvas.height));
+    }
+    
+    undo() {
+        if (this.history.length > 1) {
+            this.history.pop(); // Elimina el estado actual
+            const lastState = this.history[this.history.length - 1];
+            this.context.putImageData(lastState, 0, 0);
+        } else {
+             // Si solo queda el estado inicial, limpia el canvas
+            this.clearCanvas(false); // false para no guardar un nuevo estado vacío
+        }
+    }
+    
+    clearCanvas(save = true) {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.history = []; // Limpiar historial
+        if (save) {
+            this.saveState(); // Guardar el estado en blanco como inicial
+        }
+    }
+    
+    redrawHistory() {
+        if (this.history.length > 0) {
+            this.context.putImageData(this.history[this.history.length - 1], 0, 0);
+        }
+    }
+
+    getCanvasImageData() {
+        return this.canvas.toDataURL('image/png').split(',')[1];
+    }
+    
+    isEmpty() {
+        const pixelBuffer = new Uint32Array(this.context.getImageData(0, 0, this.canvas.width, this.canvas.height).data.buffer);
+        return !pixelBuffer.some(color => color !== 0);
+    }
+}
+
+// Inicialización del pizarrón
+let whiteboard;
+document.addEventListener('DOMContentLoaded', () => {
+    // Wait a bit to ensure the canvas is properly loaded
+    setTimeout(() => {
+        whiteboard = new Whiteboard('whiteboard', 'eraser-cursor');
+        
+        // Create eraser cursor element if it doesn't exist
+        if (!document.getElementById('eraser-cursor')) {
+            const eraserCursor = document.createElement('div');
+            eraserCursor.id = 'eraser-cursor';
+            eraserCursor.style.cssText = `
+                position: fixed;
+                pointer-events: none;
+                z-index: 9999;
+                border: 2px solid black;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.3);
+                display: none;
+                transform: translate(-50%, -50%);
+            `;
+            document.body.appendChild(eraserCursor);
+            whiteboard.eraserCursor = eraserCursor;
+        }
+        
+        // Initialize pen tool as active
+        const penTool = document.getElementById('pen-tool');
+        if (penTool) {
+            penTool.classList.add('active');
+        }
+        
+        console.log('Whiteboard initialized successfully');
+    }, 100);
 });

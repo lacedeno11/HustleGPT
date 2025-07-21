@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Canvas - TutorIA</title>
+    <style>
+        canvas {
+            border: 2px solid red;
+            background: white;
+        }
+        .debug {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Debug Canvas - TutorIA</h1>
+    
+    <div class="debug">
+        <h3>Estado del Canvas:</h3>
+        <p>Canvas encontrado: <span id="canvas-found">No</span></p>
+        <p>Whiteboard inicializado: <span id="whiteboard-init">No</span></p>
+        <p>Herramienta actual: <span id="current-tool">N/A</span></p>
+        <p>Eventos de mouse: <span id="mouse-events">N/A</span></p>
+    </div>
+    
+    <canvas id="whiteboard" width="600" height="400"></canvas>
+    
+    <div class="debug">
+        <button onclick="testDraw()">Test Dibujo Manual</button>
+        <button onclick="checkCanvas()">Verificar Canvas</button>
+        <button onclick="resetCanvas()">Reset Canvas</button>
+    </div>
+    
+    <div id="log" class="debug">
+        <h3>Log de Eventos:</h3>
+        <div id="log-content"></div>
+    </div>
+
+    <script>
+        let whiteboard;
+        let logDiv = document.getElementById('log-content');
+        
+        function log(message) {
+            console.log(message);
+            logDiv.innerHTML += '<p>' + message + '</p>';
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function testDraw() {
+            log('Iniciando test de dibujo manual...');
+            const canvas = document.getElementById('whiteboard');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.strokeStyle = '#ff0000';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(50, 50);
+            ctx.lineTo(150, 150);
+            ctx.stroke();
+            log('Línea roja dibujada manualmente');
+        }
+        
+        function checkCanvas() {
+            log('Verificando estado del canvas...');
+            const canvas = document.getElementById('whiteboard');
+            log('Canvas element: ' + (canvas ? 'Encontrado' : 'No encontrado'));
+            
+            if (canvas) {
+                log('Canvas width: ' + canvas.width);
+                log('Canvas height: ' + canvas.height);
+                log('Canvas style: ' + canvas.style.cssText);
+            }
+            
+            if (whiteboard) {
+                log('Whiteboard currentTool: ' + whiteboard.currentTool);
+                log('Whiteboard brushSize: ' + whiteboard.brushSize);
+                log('Context strokeStyle: ' + whiteboard.ctx.strokeStyle);
+                log('Context lineWidth: ' + whiteboard.ctx.lineWidth);
+                log('Context globalCompositeOperation: ' + whiteboard.ctx.globalCompositeOperation);
+            }
+        }
+        
+        function resetCanvas() {
+            log('Reseteando canvas...');
+            if (whiteboard) {
+                whiteboard.setupCanvas();
+                whiteboard.setTool('pen');
+                log('Canvas reseteado y lápiz activado');
+            }
+        }
+        
+        // Cargar draw.js y inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            log('DOM cargado, iniciando...');
+            
+            // Verificar si el canvas existe
+            const canvas = document.getElementById('whiteboard');
+            document.getElementById('canvas-found').textContent = canvas ? 'Sí' : 'No';
+            
+            if (canvas) {
+                log('Canvas encontrado, inicializando whiteboard...');
+                
+                // Cargar el script draw.js dinámicamente
+                const script = document.createElement('script');
+                script.src = 'draw.js';
+                script.onload = function() {
+                    log('draw.js cargado');
+                    
+                    // Esperar un poco y luego inicializar
+                    setTimeout(() => {
+                        if (typeof WhiteboardDrawing !== 'undefined') {
+                            log('Clase WhiteboardDrawing disponible');
+                            whiteboard = new WhiteboardDrawing('whiteboard');
+                            document.getElementById('whiteboard-init').textContent = 'Sí';
+                            document.getElementById('current-tool').textContent = whiteboard.currentTool;
+                            log('Whiteboard inicializado correctamente');
+                            
+                            // Agregar listeners de debug
+                            canvas.addEventListener('mousedown', () => log('Mouse down detectado'));
+                            canvas.addEventListener('mousemove', () => log('Mouse move detectado'));
+                            canvas.addEventListener('mouseup', () => log('Mouse up detectado'));
+                            document.getElementById('mouse-events').textContent = 'Configurados';
+                            
+                        } else {
+                            log('ERROR: Clase WhiteboardDrawing no disponible');
+                        }
+                    }, 100);
+                };
+                script.onerror = function() {
+                    log('ERROR: No se pudo cargar draw.js');
+                };
+                document.head.appendChild(script);
+            } else {
+                log('ERROR: Canvas no encontrado');
+            }
+        });
+    </script>
+</body>
+</html>

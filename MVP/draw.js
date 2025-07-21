@@ -1,7 +1,17 @@
 class Whiteboard {
     constructor(canvasId, cursorId) {
+        console.log('🎨 Initializing Whiteboard with canvasId:', canvasId);
         this.canvas = document.getElementById(canvasId);
+        console.log('🎨 Canvas element:', this.canvas);
+        
+        if (!this.canvas) {
+            console.error('❌ Canvas element not found!');
+            return;
+        }
+        
         this.context = this.canvas.getContext('2d');
+        console.log('🎨 Canvas context:', this.context);
+        
         this.eraserCursor = document.getElementById(cursorId);
         this.isDrawing = false;
         this.mode = 'pen'; // 'pen' or 'eraser'
@@ -11,12 +21,21 @@ class Whiteboard {
         this.resizeCanvas();
         this.bindEvents();
         this.saveState(); // Guardar el estado inicial en blanco
+        
+        console.log('✅ Whiteboard initialized successfully');
     }
 
     bindEvents() {
+        console.log('🎯 Binding events to canvas');
         window.addEventListener('resize', () => this.resizeCanvas());
-        this.canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
-        this.canvas.addEventListener('mouseup', () => this.stopDrawing());
+        this.canvas.addEventListener('mousedown', (e) => {
+            console.log('🖱️ Mouse down event triggered');
+            this.startDrawing(e);
+        });
+        this.canvas.addEventListener('mouseup', () => {
+            console.log('🖱️ Mouse up event triggered');
+            this.stopDrawing();
+        });
         this.canvas.addEventListener('mouseleave', () => {
             this.isDrawing = false;
             if (this.eraserCursor) this.eraserCursor.style.display = 'none';
@@ -29,6 +48,8 @@ class Whiteboard {
                 this.eraserCursor.style.display = 'block';
             }
         });
+        
+        console.log('✅ Events bound successfully');
     }
 
     resizeCanvas() {
@@ -59,6 +80,7 @@ class Whiteboard {
     }
 
     startDrawing(e) {
+        console.log('🖱️ Start drawing at:', e.offsetX, e.offsetY);
         this.isDrawing = true;
         this.context.beginPath();
         this.context.moveTo(e.offsetX, e.offsetY);
@@ -81,7 +103,8 @@ class Whiteboard {
 
         if (!this.isDrawing) return;
 
-        this.context.lineWidth = this.brushSize;
+        // Tamaño estático pequeño para el lápiz, tamaño variable para el borrador
+        this.context.lineWidth = this.mode === 'pen' ? 2 : this.brushSize;
         this.context.lineCap = 'round';
         this.context.strokeStyle = this.mode === 'pen' ? '#000000' : '#FFFFFF'; // Blanco para borrar
         this.context.globalCompositeOperation = this.mode === 'pen' ? 'source-over' : 'destination-out';
@@ -132,37 +155,5 @@ class Whiteboard {
     }
 }
 
-// Inicialización del pizarrón
-let whiteboard;
-document.addEventListener('DOMContentLoaded', () => {
-    // Wait a bit to ensure the canvas is properly loaded
-    setTimeout(() => {
-        whiteboard = new Whiteboard('whiteboard', 'eraser-cursor');
-        
-        // Create eraser cursor element if it doesn't exist
-        if (!document.getElementById('eraser-cursor')) {
-            const eraserCursor = document.createElement('div');
-            eraserCursor.id = 'eraser-cursor';
-            eraserCursor.style.cssText = `
-                position: fixed;
-                pointer-events: none;
-                z-index: 9999;
-                border: 2px solid black;
-                border-radius: 50%;
-                background: rgba(255, 255, 255, 0.3);
-                display: none;
-                transform: translate(-50%, -50%);
-            `;
-            document.body.appendChild(eraserCursor);
-            whiteboard.eraserCursor = eraserCursor;
-        }
-        
-        // Initialize pen tool as active
-        const penTool = document.getElementById('pen-tool');
-        if (penTool) {
-            penTool.classList.add('active');
-        }
-        
-        console.log('Whiteboard initialized successfully');
-    }, 100);
-});
+// Export the Whiteboard class for use by main.js
+// No DOMContentLoaded listener here - main.js will handle initialization

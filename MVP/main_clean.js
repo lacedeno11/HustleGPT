@@ -96,9 +96,8 @@ Responde en español de manera comprensiva y educativa.`
             date: new Date().toDateString()
         };
         localStorage.setItem(this.tokenStorageKey, JSON.stringify(data));
-    }
-
-    hasTokensAvailable() {
+    }    has
+TokensAvailable() {
         return this.usedTokens < this.maxTokens;
     }
 
@@ -141,21 +140,6 @@ Responde en español de manera comprensiva y educativa.`
     // Event binding
     bindEvents() {
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialize Whiteboard first
-            console.log('🚀 Initializing Whiteboard...');
-            window.whiteboard = new Whiteboard('whiteboard', 'eraser-cursor');
-
-            if (!window.whiteboard || !window.whiteboard.canvas) {
-                console.error('❌ Failed to initialize Whiteboard!');
-                return;
-            }
-
-            console.log('✅ Whiteboard initialized successfully');
-
-            // Initialize pen tool as default
-            setTimeout(() => {
-                this.selectPenTool();
-            }, 100);
             // Help buttons
             const helpToggle = document.getElementById('help-toggle');
             if (helpToggle) {
@@ -182,8 +166,8 @@ Responde en español de manera comprensiva y educativa.`
             const clearCanvas = document.getElementById('clear-canvas');
             if (clearCanvas) {
                 clearCanvas.addEventListener('click', this.clearCanvas.bind(this));
-            }
-            // Action buttons
+            }      
+      // Action buttons
             const clearAll = document.getElementById('clear-all');
             if (clearAll) {
                 clearAll.addEventListener('click', this.clearAll.bind(this));
@@ -212,8 +196,9 @@ Responde en español de manera comprensiva y educativa.`
                 eraserSize.addEventListener('input', (e) => {
                     const size = parseInt(e.target.value);
                     eraserSizeDisplay.textContent = `${size}px`;
-                    if (window.whiteboard && window.whiteboard.mode === 'eraser') {
-                        window.whiteboard.setBrushSize(size);
+                    if (whiteboard && whiteboard.currentTool === 'eraser') {
+                        whiteboard.brushSize = size;
+                        whiteboard.ctx.lineWidth = size;
                         this.updateCanvasCursor('eraser', size);
                     }
                 });
@@ -248,8 +233,8 @@ Responde en español de manera comprensiva y educativa.`
             const minimizedOutput = document.getElementById('minimized-output');
             if (minimizedOutput) {
                 minimizedOutput.addEventListener('click', this.showOutputPanel.bind(this));
-            }
-            // Exercise functionality
+            }    
+        // Exercise functionality
             const clearExercise = document.getElementById('clear-exercise');
             if (clearExercise) {
                 clearExercise.addEventListener('click', this.clearExercise.bind(this));
@@ -263,7 +248,7 @@ Responde en español de manera comprensiva y educativa.`
     toggleHelpMenu() {
         const helpMenu = document.getElementById('help-menu');
         const helpArrow = document.getElementById('help-arrow');
-
+        
         if (helpMenu && helpArrow) {
             const isHidden = helpMenu.classList.contains('hidden');
             if (isHidden) {
@@ -279,7 +264,7 @@ Responde en español de manera comprensiva y educativa.`
     closeHelpMenu() {
         const helpMenu = document.getElementById('help-menu');
         const helpArrow = document.getElementById('help-arrow');
-
+        
         if (helpMenu && helpArrow) {
             helpMenu.classList.add('hidden');
             helpArrow.style.transform = 'rotate(0deg)';
@@ -297,7 +282,7 @@ Responde en español de manera comprensiva y educativa.`
             this.showOutputPanel();
 
             const helpModes = {
-                1: 'stuck', 2: 'hint', 3: 'clarify',
+                1: 'stuck', 2: 'hint', 3: 'clarify', 
                 4: 'next_step', 5: 'verify', 6: 'solution'
             };
 
@@ -311,7 +296,7 @@ Responde en español de manera comprensiva y educativa.`
             this.closeHelpMenu();
 
             if (['stuck', 'hint', 'next_step', 'verify'].includes(mode)) {
-                if (window.whiteboard && window.whiteboard.isEmpty()) {
+                if (whiteboard && whiteboard.isEmpty()) {
                     this.showError('Por favor, dibuja o escribe algo en la pizarra antes de solicitar este tipo de ayuda.');
                     return;
                 }
@@ -322,8 +307,8 @@ Responde en español de manera comprensiva y educativa.`
                 return;
             }
 
-            this.showLoading(true);
-            const imageData = window.whiteboard && !window.whiteboard.isEmpty() ? window.whiteboard.getCanvasImageData() : null;
+            this.showLoading(true);          
+  const imageData = whiteboard && !whiteboard.isEmpty() ? whiteboard.getCanvasImageData() : null;
             const exerciseText = document.getElementById('exercise-input')?.value || '';
 
             let contextualPrompt = this.tutorPrompts[mode];
@@ -348,7 +333,7 @@ Responde en español de manera comprensiva y educativa.`
                 });
             }
 
-            if (mode === 'clarify' && (!imageData || window.whiteboard.isEmpty())) {
+            if (mode === 'clarify' && (!imageData || whiteboard.isEmpty())) {
                 requestParts[0].text += "\n\nProporciona ejemplos y explicaciones sobre tipos de problemas comunes.";
             }
 
@@ -374,7 +359,7 @@ Responde en español de manera comprensiva y educativa.`
             const data = await response.json();
             if (data.candidates && data.candidates[0] && data.candidates[0].content) {
                 const aiText = data.candidates[0].content.parts[0].text;
-
+                
                 this.conversationHistory.push(`Modo: ${mode} - Respuesta: ${aiText.substring(0, 100)}...`);
                 if (this.conversationHistory.length > 5) {
                     this.conversationHistory.shift();
@@ -401,7 +386,7 @@ Responde en español de manera comprensiva y educativa.`
         } finally {
             this.showLoading(false);
         }
-    }
+    }   
     async sendQuery() {
         const queryInput = document.getElementById('query-input');
         const query = queryInput?.value?.trim();
@@ -415,7 +400,7 @@ Responde en español de manera comprensiva y educativa.`
             this.showOutputPanel();
             this.showLoading(true);
 
-            const imageData = window.whiteboard && !window.whiteboard.isEmpty() ? window.whiteboard.getCanvasImageData() : null;
+            const imageData = whiteboard && !whiteboard.isEmpty() ? whiteboard.getCanvasImageData() : null;
             const exerciseText = document.getElementById('exercise-input')?.value || '';
 
             let contextPrompt = `Eres un tutor experto. Un estudiante pregunta: "${query}". `;
@@ -465,18 +450,18 @@ Responde en español de manera comprensiva y educativa.`
         } finally {
             this.showLoading(false);
         }
-    }
-    // Action functions
+    }   
+ // Action functions
     clearAll() {
         if (confirm('¿Estás seguro de que quieres eliminar todo el contenido?')) {
-            if (window.whiteboard) window.whiteboard.clearCanvas();
+            if (whiteboard) whiteboard.clearCanvas();
             this.clearExercise();
-
+            
             const aiResponse = document.getElementById('ai-response');
             if (aiResponse) {
                 aiResponse.innerHTML = '<p class="text-gray-500 italic">Las respuestas de la IA aparecerán aquí...</p>';
             }
-
+            
             this.responseHistory = [];
             this.conversationHistory = [];
             this.showExerciseSuccess('🗑️ Todo el contenido ha sido eliminado');
@@ -484,8 +469,8 @@ Responde en español de manera comprensiva y educativa.`
     }
 
     undoAction() {
-        if (window.whiteboard && window.whiteboard.undo) {
-            const success = window.whiteboard.undo();
+        if (whiteboard && whiteboard.undo) {
+            const success = whiteboard.undo();
             if (success) {
                 this.showExerciseSuccess('↶ Acción deshecha');
             } else {
@@ -497,8 +482,8 @@ Responde en español de manera comprensiva y educativa.`
     }
 
     clearCanvas() {
-        if (window.whiteboard) {
-            window.whiteboard.clearCanvas();
+        if (whiteboard) {
+            whiteboard.clearCanvas();
             const aiResponse = document.getElementById('ai-response');
             if (aiResponse) {
                 aiResponse.innerHTML = '<p class="text-gray-500 italic">Las respuestas de la IA aparecerán aquí...</p>';
@@ -511,25 +496,25 @@ Responde en español de manera comprensiva y educativa.`
         const exerciseInput = document.getElementById('exercise-input');
         const imageContainer = document.getElementById('exercise-image-container');
         const exerciseImage = document.getElementById('exercise-image');
-
+        
         if (exerciseInput) {
             exerciseInput.value = '';
             exerciseInput.style.height = 'auto';
         }
-
+        
         if (imageContainer && exerciseImage) {
             imageContainer.classList.add('hidden');
             exerciseImage.src = '';
             this.exerciseImageData = null;
         }
-
+        
         this.showExerciseSuccess('🗑️ Ejercicio limpiado');
     }
 
     // Drawing tool functions
     selectPenTool() {
-        if (window.whiteboard) {
-            window.whiteboard.setMode('pen');
+        if (whiteboard) {
+            whiteboard.setTool('pen');
             this.updateToolButtons();
             this.hideEraserSizePanel();
             this.updateCanvasCursor('pen');
@@ -537,37 +522,38 @@ Responde en español de manera comprensiva y educativa.`
     }
 
     selectEraserTool() {
-        if (window.whiteboard) {
-            window.whiteboard.setMode('eraser');
+        if (whiteboard) {
+            whiteboard.setTool('eraser');
             this.updateToolButtons();
             this.showEraserSizePanel();
-
+            
             const eraserSize = document.getElementById('eraser-size');
             const size = eraserSize ? parseInt(eraserSize.value) : 15;
-
+            
             if (eraserSize) {
-                window.whiteboard.setBrushSize(size);
+                whiteboard.brushSize = size;
+                whiteboard.ctx.lineWidth = size;
             }
-
+            
             this.updateCanvasCursor('eraser', size);
         }
-    }
-    updateToolButtons() {
+    } 
+   updateToolButtons() {
         const penTool = document.getElementById('pen-tool');
         const eraserTool = document.getElementById('eraser-tool');
-
-        if (penTool && eraserTool && window.whiteboard) {
+        
+        if (penTool && eraserTool && whiteboard) {
             // Reset both buttons
             penTool.classList.remove('bg-blue-500', 'text-white');
             penTool.classList.add('bg-gray-300', 'text-gray-700');
             eraserTool.classList.remove('bg-orange-500', 'text-white');
             eraserTool.classList.add('bg-gray-300', 'text-gray-700');
-
+            
             // Activate current tool
-            if (window.whiteboard.mode === 'pen') {
+            if (whiteboard.currentTool === 'pen') {
                 penTool.classList.remove('bg-gray-300', 'text-gray-700');
                 penTool.classList.add('bg-blue-500', 'text-white');
-            } else if (window.whiteboard.mode === 'eraser') {
+            } else if (whiteboard.currentTool === 'eraser') {
                 eraserTool.classList.remove('bg-gray-300', 'text-gray-700');
                 eraserTool.classList.add('bg-orange-500', 'text-white');
             }
@@ -587,18 +573,18 @@ Responde en español de manera comprensiva y educativa.`
     updateCanvasCursor(tool, size = 15) {
         const canvas = document.getElementById('whiteboard');
         if (!canvas) return;
-
+        
         if (tool === 'eraser') {
             const cursorSize = Math.max(12, Math.min(size, 50));
             const cursorSvg = `
                 <svg width="${cursorSize}" height="${cursorSize}" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="${cursorSize / 2}" cy="${cursorSize / 2}" r="${(cursorSize - 3) / 2}" 
+                    <circle cx="${cursorSize/2}" cy="${cursorSize/2}" r="${(cursorSize-3)/2}" 
                             fill="rgba(255,255,255,0.3)" stroke="black" stroke-width="2" opacity="0.9"/>
                 </svg>
             `;
             const encodedSvg = encodeURIComponent(cursorSvg);
             const cursorUrl = `data:image/svg+xml,${encodedSvg}`;
-            canvas.style.cursor = `url("${cursorUrl}") ${cursorSize / 2} ${cursorSize / 2}, auto`;
+            canvas.style.cursor = `url("${cursorUrl}") ${cursorSize/2} ${cursorSize/2}, auto`;
         } else {
             canvas.style.cursor = 'crosshair';
         }
@@ -608,7 +594,7 @@ Responde en español de manera comprensiva y educativa.`
     showOutputPanel() {
         const outputPanel = document.getElementById('output-panel');
         const minimizedOutput = document.getElementById('minimized-output');
-
+        
         if (outputPanel && minimizedOutput) {
             outputPanel.classList.remove('hidden');
             minimizedOutput.classList.add('hidden');
@@ -618,11 +604,11 @@ Responde en español de manera comprensiva y educativa.`
     minimizeOutputPanel() {
         const outputPanel = document.getElementById('output-panel');
         const minimizedOutput = document.getElementById('minimized-output');
-
+        
         if (outputPanel && minimizedOutput) {
             outputPanel.classList.add('hidden');
             minimizedOutput.classList.remove('hidden');
-
+            
             const responseCount = document.querySelectorAll('#ai-response .mb-3').length;
             const countBadge = minimizedOutput.querySelector('.bg-blue-600');
             if (countBadge) {
@@ -634,18 +620,18 @@ Responde en español de manera comprensiva y educativa.`
     closeOutputPanel() {
         const outputPanel = document.getElementById('output-panel');
         const minimizedOutput = document.getElementById('minimized-output');
-
+        
         if (outputPanel && minimizedOutput) {
             outputPanel.classList.add('hidden');
             minimizedOutput.classList.add('hidden');
         }
-    }
+    }    
 
     showLoading(show) {
         const loadingIndicator = document.getElementById('loadingIndicator');
         const aiResponse = document.getElementById('ai-response');
         const sendQuery = document.getElementById('send-query');
-
+        
         if (show) {
             if (loadingIndicator) loadingIndicator.classList.remove('hidden');
             if (aiResponse) aiResponse.classList.add('hidden');
@@ -673,13 +659,13 @@ Responde en español de manera comprensiva y educativa.`
                     <div class="text-gray-800">${text}</div>
                 </div>
             `;
-
+            
             if (aiResponse.innerHTML.includes('Las respuestas de la IA aparecerán aquí')) {
                 aiResponse.innerHTML = responseHtml;
             } else {
                 aiResponse.innerHTML += responseHtml;
             }
-
+            
             aiResponse.scrollTop = aiResponse.scrollHeight;
         }
     }
@@ -694,13 +680,13 @@ Responde en español de manera comprensiva y educativa.`
                     <div class="text-red-700 font-medium">${message}</div>
                 </div>
             `;
-
+            
             if (aiResponse.innerHTML.includes('Las respuestas de la IA aparecerán aquí')) {
                 aiResponse.innerHTML = errorHtml;
             } else {
                 aiResponse.innerHTML += errorHtml;
             }
-
+            
             aiResponse.scrollTop = aiResponse.scrollHeight;
         }
     }
@@ -725,24 +711,24 @@ Responde en español de manera comprensiva y educativa.`
             const successMsg = document.createElement('div');
             successMsg.className = 'text-xs text-green-600 mt-1';
             successMsg.textContent = message;
-
+            
             exerciseContent.appendChild(successMsg);
-
+            
             setTimeout(() => {
                 if (successMsg.parentNode) {
                     successMsg.parentNode.removeChild(successMsg);
                 }
             }, 3000);
         }
-    }
-    // Utility functions
+    }   
+ // Utility functions
     addToHistory(query, response) {
         this.responseHistory.push({
             timestamp: new Date(),
             query: query,
             response: response
         });
-
+        
         if (this.responseHistory.length > 10) {
             this.responseHistory = this.responseHistory.slice(-10);
         }
@@ -779,15 +765,15 @@ Responde en español de manera comprensiva y educativa.`
     setupExerciseImagePaste() {
         const exerciseContent = document.getElementById('exercise-content');
         const exerciseInput = document.getElementById('exercise-input');
-
+        
         if (!exerciseContent || !exerciseInput) return;
-
+        
         exerciseContent.addEventListener('paste', (e) => {
             e.preventDefault();
-
+            
             const items = e.clipboardData.items;
             let hasImage = false;
-
+            
             for (let item of items) {
                 if (item.type.indexOf('image') !== -1) {
                     hasImage = true;
@@ -796,44 +782,44 @@ Responde en español de manera comprensiva y educativa.`
                     break;
                 }
             }
-
+            
             if (!hasImage) {
                 const text = e.clipboardData.getData('text/plain');
                 if (text) {
                     const start = exerciseInput.selectionStart;
                     const end = exerciseInput.selectionEnd;
                     const currentText = exerciseInput.value;
-
+                    
                     exerciseInput.value = currentText.substring(0, start) + text + currentText.substring(end);
                     exerciseInput.selectionStart = exerciseInput.selectionEnd = start + text.length;
                     exerciseInput.focus();
                 }
             }
         });
-
+        
         const removeImageBtn = document.getElementById('remove-exercise-image');
         if (removeImageBtn) {
             removeImageBtn.addEventListener('click', () => {
                 this.removeExerciseImage();
             });
         }
-    }
-    handleExerciseImagePaste(file) {
+    }  
+  handleExerciseImagePaste(file) {
         if (!file || !file.type.startsWith('image/')) {
             this.showError('Por favor, pega una imagen válida.');
             return;
         }
-
+        
         if (file.size > 5 * 1024 * 1024) {
             this.showError('La imagen es demasiado grande. Máximo 5MB.');
             return;
         }
-
+        
         const reader = new FileReader();
         reader.onload = (e) => {
             const imageContainer = document.getElementById('exercise-image-container');
             const exerciseImage = document.getElementById('exercise-image');
-
+            
             if (exerciseImage && imageContainer) {
                 exerciseImage.src = e.target.result;
                 imageContainer.classList.remove('hidden');
@@ -841,18 +827,18 @@ Responde en español de manera comprensiva y educativa.`
                 this.showExerciseImageSuccess();
             }
         };
-
+        
         reader.onerror = () => {
             this.showError('Error al cargar la imagen.');
         };
-
+        
         reader.readAsDataURL(file);
     }
 
     removeExerciseImage() {
         const imageContainer = document.getElementById('exercise-image-container');
         const exerciseImage = document.getElementById('exercise-image');
-
+        
         if (imageContainer && exerciseImage) {
             imageContainer.classList.add('hidden');
             exerciseImage.src = '';
@@ -866,9 +852,9 @@ Responde en español de manera comprensiva y educativa.`
             const successMsg = document.createElement('div');
             successMsg.className = 'text-xs text-green-600 mt-1';
             successMsg.textContent = '✅ Imagen pegada correctamente';
-
+            
             exerciseContent.appendChild(successMsg);
-
+            
             setTimeout(() => {
                 if (successMsg.parentNode) {
                     successMsg.parentNode.removeChild(successMsg);
@@ -888,24 +874,17 @@ Responde en español de manera comprensiva y educativa.`
 // Initialize TutorIA application
 const tutorIA = new TutorIA();
 
-// Make it globally available for debugging
-window.tutorIA = tutorIA;
-
 // Utility function to set API key
 function setGeminiApiKey(key) {
-    if (window.tutorIA) {
-        window.tutorIA.setApiKey(key);
-        console.log('✅ API key updated successfully');
-    } else {
-        console.error('❌ TutorIA not initialized');
-    }
+    tutorIA.setApiKey(key);
+    console.log('API key updated successfully');
 }
 
 // Initialize application when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     if (tutorIA.isConfigured()) {
         console.log('✅ TutorIA initialized successfully with API key configured');
-
+        
         setTimeout(() => {
             const aiResponse = document.getElementById('ai-response');
             if (aiResponse && aiResponse.innerHTML.includes('Las respuestas de la IA aparecerán aquí')) {
@@ -928,5 +907,3 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('⚠️ API Key not configured properly');
     }
 });
-
-console.log('✅ TutorIA application initialized successfully!');

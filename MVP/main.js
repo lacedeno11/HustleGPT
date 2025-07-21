@@ -3,11 +3,11 @@
 class TutorIA {
     constructor() {
         // API Configuration
-        this.apiKey = 'AIzaSyAojAxx9lFUfzjeZXXETjGG_dlzpn-ktPk';
-        this.apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+        this.apiKey = 'YOUR_API_KEY_HERE';
+        this.apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
         // Token management
-        this.maxTokens = 15;
+        this.maxTokens = 30;
         this.usedTokens = 0;
         this.tokenStorageKey = 'tutorIA_tokens';
         this.loadTokensFromStorage();
@@ -36,11 +36,12 @@ Responde en español de manera constructiva y alentadora.`,
 Responde en español de manera que despierte su curiosidad por explorar más.`,
 
             hint: `El estudiante pide una pista. Como tutor experto:
-1. Analiza lo que ya ha descubierto en la pizarra
-2. Da una pista que lo ayude a avanzar SOLO en lo que NO ha resuelto aún
-3. NO repitas lo que ya sabe o ha hecho
-4. La pista debe ser suficiente para el siguiente paso, no más
-Responde en español con una pista específica y útil.`,
+1. PRIMERO: Examina cuidadosamente la imagen de la pizarra que te estoy enviando. Describe brevemente lo que ves dibujado.
+2. SEGUNDO: Analiza lo que ya ha descubierto en la pizarra basándote en lo que observas
+3. TERCERO: Da una pista que lo ayude a avanzar SOLO en lo que NO ha resuelto aún
+4. NO repitas lo que ya sabe o ha hecho
+5. La pista debe ser suficiente para el siguiente paso, no más
+Responde en español con una pista específica y útil. IMPORTANTE: Siempre menciona lo que ves en la pizarra para confirmar que puedes ver la imagen.`,
 
             clarify: `El estudiante quiere que clarifies el problema. Como tutor experto:
 1. Proporciona más ejemplos de entrada y salida
@@ -310,12 +311,13 @@ Responde en español de manera comprensiva y educativa.`
             this.currentMode = mode;
             this.closeHelpMenu();
 
-            if (['stuck', 'hint', 'next_step', 'verify'].includes(mode)) {
-                if (window.whiteboard && window.whiteboard.isEmpty()) {
-                    this.showError('Por favor, dibuja o escribe algo en la pizarra antes de solicitar este tipo de ayuda.');
-                    return;
-                }
-            }
+            // Comentado temporalmente para debug - siempre permitir envío
+            // if (['stuck', 'hint', 'next_step', 'verify'].includes(mode)) {
+            //     if (window.whiteboard && window.whiteboard.isEmpty()) {
+            //         this.showError('Por favor, dibuja o escribe algo en la pizarra antes de solicitar este tipo de ayuda.');
+            //         return;
+            //     }
+            // }
 
             if (!this.consumeToken()) {
                 this.showError('Error al procesar la solicitud. Intenta de nuevo.');
@@ -323,7 +325,18 @@ Responde en español de manera comprensiva y educativa.`
             }
 
             this.showLoading(true);
-            const imageData = window.whiteboard && !window.whiteboard.isEmpty() ? window.whiteboard.getCanvasImageData() : null;
+
+            // Debug: Check whiteboard status
+            console.log('🔍 Debug - Whiteboard exists:', !!window.whiteboard);
+            if (window.whiteboard) {
+                console.log('🔍 Debug - Canvas isEmpty:', window.whiteboard.isEmpty());
+                console.log('🔍 Debug - Canvas element:', window.whiteboard.canvas);
+            }
+
+            // Siempre capturar la imagen para debug
+            const imageData = window.whiteboard ? window.whiteboard.getCanvasImageData() : null;
+            console.log('🔍 Debug - Image data captured:', !!imageData);
+            console.log('🔍 Debug - Image data length:', imageData ? imageData.length : 0);
             const exerciseText = document.getElementById('exercise-input')?.value || '';
 
             let contextualPrompt = this.tutorPrompts[mode];
@@ -335,16 +348,29 @@ Responde en español de manera comprensiva y educativa.`
             }
 
             const requestParts = [{ text: contextualPrompt }];
+
+            // Debug: Check if image should be sent
+            console.log('🔍 Debug - Mode:', mode);
+            console.log('🔍 Debug - Should send image:', ['stuck', 'hint', 'next_step', 'verify'].includes(mode));
+            console.log('🔍 Debug - Has imageData:', !!imageData);
+
             if (imageData && ['stuck', 'hint', 'next_step', 'verify'].includes(mode)) {
                 requestParts.push({
-                    inline_data: { mime_type: "image/png", data: imageData }
+                    inline_data: {
+                        mime_type: "image/jpeg",
+                        data: imageData
+                    }
                 });
+                console.log('🔍 Debug - Image added to request!');
+                console.log('🔍 Debug - Image data sample:', imageData.substring(0, 50) + '...');
+            } else {
+                console.log('🔍 Debug - Image NOT added to request');
             }
 
             const exerciseImageData = this.getExerciseImageData();
             if (exerciseImageData) {
                 requestParts.push({
-                    inline_data: { mime_type: "image/jpeg", data: exerciseImageData }
+                    inlineData: { mimeType: "image/jpeg", data: exerciseImageData }
                 });
             }
 
@@ -360,18 +386,36 @@ Responde en español de manera comprensiva y educativa.`
                 }
             };
 
+            // Debug: Log the complete request
+            console.log('🔍 Debug - Request parts count:', requestParts.length);
+            console.log('🔍 Debug - Request structure:', {
+                partsCount: requestParts.length,
+                hasText: requestParts.some(part => part.text),
+                hasImage: requestParts.some(part => part.inlineData)
+            });
+            console.log('🔍 Debug - Full request body:', JSON.stringify(requestBody, null, 2));
+
+            console.log('🔍 Debug - Sending request to API...');
+
             const response = await fetch(`${this.apiUrl}?key=${this.apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(requestBody)
             });
 
+            console.log('🔍 Debug - API Response status:', response.status);
+            console.log('🔍 Debug - API Response ok:', response.ok);
+
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
+                console.log('🔍 Debug - API Error data:', errorData);
+                console.log('🔍 Debug - API Error details:', JSON.stringify(errorData, null, 2));
                 throw new Error(this.getErrorMessage(response.status, errorData));
             }
 
             const data = await response.json();
+            console.log('🔍 Debug - API Response data:', data);
+
             if (data.candidates && data.candidates[0] && data.candidates[0].content) {
                 const aiText = data.candidates[0].content.parts[0].text;
 

@@ -146,12 +146,49 @@ class Whiteboard {
     }
 
     getCanvasImageData() {
-        return this.canvas.toDataURL('image/png').split(',')[1];
+        // Debug: Log canvas state
+        console.log('🔍 Canvas capture - Width:', this.canvas.width, 'Height:', this.canvas.height);
+        
+        // Crear un canvas más pequeño para reducir el tamaño de la imagen
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        // Reducir el tamaño a 800x600 máximo
+        const maxWidth = 800;
+        const maxHeight = 600;
+        const scale = Math.min(maxWidth / this.canvas.width, maxHeight / this.canvas.height, 1);
+        
+        tempCanvas.width = this.canvas.width * scale;
+        tempCanvas.height = this.canvas.height * scale;
+        
+        // Establecer fondo blanco antes de dibujar
+        tempCtx.fillStyle = 'white';
+        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        
+        // Dibujar la imagen escalada
+        tempCtx.drawImage(this.canvas, 0, 0, tempCanvas.width, tempCanvas.height);
+        
+        console.log('🔍 Canvas capture - Temp canvas size:', tempCanvas.width, 'x', tempCanvas.height);
+        
+        // Convertir a JPEG con calidad reducida para menor tamaño
+        return tempCanvas.toDataURL('image/jpeg', 0.7).split(',')[1];
     }
     
     isEmpty() {
-        const pixelBuffer = new Uint32Array(this.context.getImageData(0, 0, this.canvas.width, this.canvas.height).data.buffer);
-        return !pixelBuffer.some(color => color !== 0);
+        try {
+            const imageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
+            const pixelBuffer = new Uint32Array(imageData.data.buffer);
+            const hasContent = pixelBuffer.some(color => color !== 0);
+            
+            // Debug log
+            console.log('🔍 isEmpty() check - Canvas size:', this.canvas.width, 'x', this.canvas.height);
+            console.log('🔍 isEmpty() check - Has content:', hasContent);
+            
+            return !hasContent;
+        } catch (error) {
+            console.error('❌ Error in isEmpty():', error);
+            return true; // Si hay error, asumimos que está vacío
+        }
     }
 }
 
